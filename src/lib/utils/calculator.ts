@@ -1,22 +1,22 @@
 import type { Group, Round } from '$lib/types';
 
-/** Sum of amounts for all rounds we receive in this group */
+/** Sum of payment amounts for all rounds we receive in this group */
 export function myTotalOwe(group: Group): number {
-	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + r.amount, 0);
+	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + r.paymentAmount, 0);
 }
 
-/** What we owe for a single non-my round = sum of all our received amounts */
+/** What we owe for a single round = sum of payment amounts of rounds we receive */
 export function iOweForRound(group: Group): number {
-	return myTotalOwe(group);
+	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + r.paymentAmount, 0);
 }
 
-/** What we receive for a my-round = that round's amount */
+/** What we receive for a my-round = that round's receiveAmount */
 export function iReceiveForRound(round: Round): number {
-	return round.amount;
+	return round.receiveAmount;
 }
 
 export function totalIReceive(group: Group): number {
-	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + r.amount, 0);
+	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + r.receiveAmount, 0);
 }
 
 export function totalIOwe(group: Group): number {

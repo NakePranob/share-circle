@@ -73,7 +73,7 @@
 								{#if next}
 									<span>{formatDate(next.date)}</span>
 									<span class="{next.isMyRound ? 'text-green-600' : 'text-red-500'} font-medium">
-										{next.isMyRound ? `รับ ${formatCurrency(next.amount)}` : `จ่าย ${formatCurrency(owe)}`}
+										{next.isMyRound ? `รับ ${formatCurrency(next.receiveAmount)}` : `จ่าย ${formatCurrency(owe)}`}
 									</span>
 								{:else}
 									<span class="text-green-600">เสร็จสิ้น</span>

@@ -100,7 +100,7 @@
 									<p class="text-xs text-muted-foreground">มือ {round.roundNumber} · {formatDate(round.date)}</p>
 								</div>
 								<p class="text-sm font-bold text-green-600 dark:text-green-400">
-									+{formatCurrency(round.amount)}
+									+{formatCurrency(round.receiveAmount)}
 								</p>
 							</div>
 						{/each}
@@ -142,7 +142,7 @@
 									<p class="text-xs text-muted-foreground">
 										ถัดไป: {formatDate(next.date)} ·
 										{next.isMyRound
-											? `รับ ${formatCurrency(next.amount)}`
+											? `รับ ${formatCurrency(next.receiveAmount)}`
 											: `จ่าย`}
 									</p>
 								{/if}

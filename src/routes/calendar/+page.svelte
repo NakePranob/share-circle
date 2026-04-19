@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { groupsStore } from '$lib/stores/groups.svelte';
 	import { walletStore } from '$lib/stores/wallet.svelte';
-	import { buildCashFlow } from '$lib/utils/cashflow';
+	import { buildCashFlow, buildPaidCashFlow } from '$lib/utils/cashflow';
 	import { formatCurrency } from '$lib/utils/calculator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
@@ -21,6 +21,7 @@
 	let viewMonth = $state(new Date().getMonth()); // 0-indexed
 
 	const cashFlow = $derived(buildCashFlow(groups, wallet, viewYear, viewMonth));
+	const paidCashFlow = $derived(buildPaidCashFlow(groups, wallet, viewYear, viewMonth));
 
 	const calendarDays = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
@@ -110,7 +111,7 @@
 	}
 
 	function currentBalance() {
-		const todayData = cashFlow.get(todayStr);
+		const todayData = paidCashFlow.get(todayStr);
 		return todayData?.balance ?? wallet.initialBalance;
 	}
 </script>

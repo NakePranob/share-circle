@@ -7,50 +7,77 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Separator } from '$lib/components/ui/separator';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import * as RadioGroup from '$lib/components/ui/radio-group';
 	import { toast } from 'svelte-sonner';
-	import { ArrowLeft, Plus, Trash2 } from '@lucide/svelte';
-	import type { Round } from '$lib/types';
+	import { ArrowLeft } from '@lucide/svelte';
 
 	interface RoundForm {
 		date: string;
-		amount: number;
+		paymentAmount: number;
+		receiveAmount: number;
 		isMyRound: boolean;
 	}
+
+	type PlayMode = 'fixed' | 'stepped';
 
 	let groupName = $state('');
 	let errors = $state<Record<string, string>>({});
 
+	// Group settings
+	let totalRounds = $state(10);
+	let playMode = $state<PlayMode>('fixed');
+	let frequency = $state(30); // days
+	let receiveAmountPerRound = $state(50000);
+
+	// Fixed mode settings
+	let fixedPaymentAmount = $state(1000);
+
+	// Stepped mode settings
+	let steppedPayments = $state<number[]>([]);
+
+	// Round selection
+	let selectedRounds = $state(new Set<number>());
+
 	const today = new Date().toISOString().split('T')[0];
 
-	let rounds = $state<RoundForm[]>([
-		{ date: today, amount: 5000, isMyRound: false },
-		{ date: today, amount: 5000, isMyRound: false },
-		{ date: today, amount: 5000, isMyRound: false }
-	]);
-
-	function addRound() {
-		const last = rounds.at(-1);
-		// Auto-increment date by 30 days from last round
-		let nextDate = today;
-		if (last?.date) {
-			const d = new Date(last.date);
-			d.setDate(d.getDate() + 30);
-			nextDate = d.toISOString().split('T')[0];
+	// Generate rounds based on settings
+	const rounds = $derived<RoundForm[]>((() => {
+		const result: RoundForm[] = [];
+		
+		for (let i = 0; i < totalRounds; i++) {
+			const date = new Date(today);
+			date.setDate(date.getDate() + (i * frequency));
+			const dateStr = date.toISOString().split('T')[0];
+			
+			const paymentAmount = playMode === 'fixed' 
+				? fixedPaymentAmount 
+				: (steppedPayments[i] ?? 0);
+			
+			result.push({
+				date: dateStr,
+				paymentAmount,
+				receiveAmount: receiveAmountPerRound,
+				isMyRound: selectedRounds.has(i)
+			});
 		}
-		rounds = [...rounds, { date: nextDate, amount: last?.amount ?? 5000, isMyRound: false }];
-	}
+		
+		return result;
+	})());
 
-	function removeRound(i: number) {
-		if (rounds.length <= 2) return;
-		rounds = rounds.filter((_, idx) => idx !== i);
-	}
+	// Initialize stepped payments when switching to stepped mode
+	$effect(() => {
+		if (playMode === 'stepped' && steppedPayments.length !== totalRounds) {
+			steppedPayments = Array.from({ length: totalRounds }, (_, i) => (i + 1) * 100);
+		}
+	});
 
 	// Preview as Group-like object for calculations
 	const previewRounds = $derived(
 		rounds.map((r, i) => ({
 			roundNumber: i + 1,
 			date: r.date,
-			amount: r.amount,
+			paymentAmount: r.paymentAmount,
+			receiveAmount: r.receiveAmount,
 			status: 'pending' as const,
 			isMyRound: r.isMyRound
 		}))
@@ -66,9 +93,11 @@
 	function validate(): boolean {
 		const errs: Record<string, string> = {};
 		if (!groupName.trim()) errs.name = 'กรุณากรอกชื่อวง';
-		if (rounds.length < 2) errs.rounds = 'ต้องมีอย่างน้อย 2 มือ';
-		if (rounds.some((r) => r.amount <= 0)) errs.amount = 'ยอดทุกมือต้องมากกว่า 0';
-		if (!rounds.some((r) => r.isMyRound)) errs.myRound = 'เลือกมือที่เราได้รับอย่างน้อย 1 มือ';
+		if (totalRounds < 2) errs.rounds = 'ต้องมีอย่างน้อย 2 มือ';
+		if (receiveAmountPerRound <= 0) errs.receiveAmount = 'ยอดรับต้องมากกว่า 0';
+		if (playMode === 'fixed' && fixedPaymentAmount <= 0) errs.fixedPayment = 'ยอดจ่ายต้องมากกว่า 0';
+		if (playMode === 'stepped' && steppedPayments.some(p => p <= 0)) errs.steppedPayments = 'ยอดจ่ายทุกมือต้องมากกว่า 0';
+		if (selectedRounds.size === 0) errs.myRound = 'เลือกมือที่เราได้รับอย่างน้อย 1 มือ';
 		errors = errs;
 		return Object.keys(errs).length === 0;
 	}
@@ -104,61 +133,102 @@
 
 		<Separator />
 
-		<!-- Rounds -->
-		<div class="space-y-3">
-			<div class="flex items-center justify-between">
-				<Label>รายการมือ</Label>
-				<span class="text-xs text-muted-foreground">{rounds.length} มือ</span>
-			</div>
-
-			{#if errors.rounds}<p class="text-xs text-destructive">{errors.rounds}</p>{/if}
-			{#if errors.amount}<p class="text-xs text-destructive">{errors.amount}</p>{/if}
-			{#if errors.myRound}<p class="text-xs text-destructive">{errors.myRound}</p>{/if}
-
-			<!-- Header -->
-			<div class="grid grid-cols-[2rem_1fr_1fr_2.5rem_2rem] gap-2 px-1 text-xs font-medium text-muted-foreground">
-				<span>มือ</span>
-				<span>วันที่</span>
-				<span>ยอดรับ (฿)</span>
-				<span class="text-center">เรา</span>
-				<span></span>
+		<!-- Group Settings -->
+		<div class="space-y-4">
+			<p class="text-sm font-medium">การตั้งค่าวง</p>
+			
+			<div class="grid grid-cols-2 gap-4">
+				<div class="space-y-2">
+					<Label for="totalRounds">จำนวนมือทั้งหมด</Label>
+					<Input id="totalRounds" type="number" min="2" bind:value={totalRounds} class="text-center" />
+				</div>
+				<div class="space-y-2">
+					<Label for="frequency">ความถี่ (วัน)</Label>
+					<Input id="frequency" type="number" min="1" bind:value={frequency} class="text-center" />
+				</div>
 			</div>
 
 			<div class="space-y-2">
-				{#each rounds as round, i}
-					<div class="grid grid-cols-[2rem_1fr_1fr_2.5rem_2rem] items-center gap-2">
-						<span class="text-sm font-medium text-muted-foreground">{i + 1}</span>
-						<Input type="date" bind:value={round.date} class="h-9 text-sm" />
-						<Input
-							type="number"
-							min="1"
-							bind:value={round.amount}
-							class="h-9 text-sm"
-							placeholder="ยอด"
-						/>
-						<div class="flex justify-center">
-							<Checkbox
-								checked={round.isMyRound}
-								onCheckedChange={(v) => (round.isMyRound = !!v)}
-								class="h-5 w-5"
-							/>
-						</div>
-						<button
-							type="button"
-							onclick={() => removeRound(i)}
-							disabled={rounds.length <= 2}
-							class="text-muted-foreground hover:text-destructive disabled:opacity-30"
-						>
-							<Trash2 class="h-4 w-4" />
-						</button>
-					</div>
-				{/each}
+				<Label for="receiveAmount">ยอดรับต่อมือ (บาท)</Label>
+				<Input id="receiveAmount" type="number" min="1" bind:value={receiveAmountPerRound} />
+				{#if errors.receiveAmount}<p class="text-xs text-destructive">{errors.receiveAmount}</p>{/if}
 			</div>
 
-			<Button type="button" variant="outline" size="sm" onclick={addRound} class="w-full">
-				<Plus class="mr-2 h-4 w-4" />
-				เพิ่มมือ
-			</Button>
+			<div class="space-y-2">
+				<Label>รูปแบบการเล่น</Label>
+				<RadioGroup.Root bind:value={playMode}>
+					<div class="flex items-center space-x-2">
+						<RadioGroup.Item value="fixed" id="fixed" />
+						<Label for="fixed" class="font-normal cursor-pointer">แบบคงที่ - จ่ายเท่ากันทุกมือ</Label>
+					</div>
+					<div class="flex items-center space-x-2">
+						<RadioGroup.Item value="stepped" id="stepped" />
+						<Label for="stepped" class="font-normal cursor-pointer">แบบขั้นบันได - จ่ายไม่เท่ากัน</Label>
+					</div>
+				</RadioGroup.Root>
+			</div>
+
+			{#if playMode === 'fixed'}
+				<div class="space-y-2">
+					<Label for="fixedPayment">ยอดจ่ายต่อมือ (บาท)</Label>
+					<Input id="fixedPayment" type="number" min="1" bind:value={fixedPaymentAmount} />
+					{#if errors.fixedPayment}<p class="text-xs text-destructive">{errors.fixedPayment}</p>{/if}
+				</div>
+			{:else}
+				<div class="space-y-2">
+					<Label>ยอดจ่ายต่อมือ (บาท)</Label>
+					{#if errors.steppedPayments}<p class="text-xs text-destructive">{errors.steppedPayments}</p>{/if}
+					<div class="grid grid-cols-5 gap-2">
+						{#each Array.from({ length: totalRounds }) as _, i (i)}
+							<div class="space-y-1">
+								<p class="text-xs text-muted-foreground text-center">มือ {i + 1}</p>
+								<Input
+									type="number"
+									min="1"
+									bind:value={steppedPayments[i]}
+									class="h-8 text-sm text-center"
+								/>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<Separator />
+
+		<!-- Rounds -->
+		<div class="space-y-3">
+			<div class="flex items-center justify-between">
+				<Label>เลือกมือที่รับ</Label>
+				<span class="text-xs text-muted-foreground">{selectedRounds.size}/{totalRounds} มือ</span>
+			</div>
+
+			{#if errors.myRound}<p class="text-xs text-destructive">{errors.myRound}</p>{/if}
+
+			<div class="grid grid-cols-2 gap-2">
+				{#each rounds as round, i}
+					<button
+						type="button"
+						onclick={() => {
+							if (selectedRounds.has(i)) {
+								selectedRounds.delete(i);
+							} else {
+								selectedRounds.add(i);
+							}
+							selectedRounds = new Set(selectedRounds);
+						}}
+						class="rounded-lg border p-3 text-left transition-colors {selectedRounds.has(i) ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border hover:bg-muted/50'}"
+					>
+						<div class="flex items-center justify-between mb-1">
+							<span class="font-medium">มือ {i + 1}</span>
+							<Checkbox checked={selectedRounds.has(i)} class="pointer-events-none" />
+						</div>
+						<p class="text-xs text-muted-foreground">{formatDate(round.date)}</p>
+						<p class="text-xs text-muted-foreground">จ่าย: {formatCurrency(round.paymentAmount)}</p>
+					</button>
+				{/each}
+			</div>
 		</div>
 
 		<!-- Summary preview -->

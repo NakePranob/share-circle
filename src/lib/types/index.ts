@@ -3,10 +3,11 @@ export type TransactionType = 'payment' | 'payout' | 'deposit' | 'withdrawal';
 
 export interface Round {
 	roundNumber: number;
-	date: string;        // ISO date — set per round
-	amount: number;      // What the receiver of this round gets
+	date: string;           // ISO date — set per round
+	paymentAmount: number; // Amount to pay for this round (per round payment)
+	receiveAmount: number; // Amount received in this round
 	status: RoundStatus;
-	isMyRound: boolean;  // True if we receive this round
+	isMyRound: boolean;    // True if we receive this round
 }
 
 export interface Group {

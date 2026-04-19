@@ -31,14 +31,14 @@
 	function openEdit(round: Round) {
 		editRound = round;
 		editDate = round.date;
-		editAmount = round.amount;
+		editAmount = round.receiveAmount;
 	}
 
 	function saveEdit() {
 		if (!group || !editRound) return;
 		groupsStore.updateRound(group.id, editRound.roundNumber, {
 			date: editDate,
-			amount: editAmount
+			receiveAmount: editAmount
 		});
 		toast.success('แก้ไขเรียบร้อย');
 		editRound = null;
@@ -197,7 +197,7 @@
 						{#if round.isMyRound}
 							<div>
 								<p class="text-xs text-muted-foreground">เราได้รับ</p>
-								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.amount)}</p>
+								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.receiveAmount)}</p>
 							</div>
 						{:else}
 							<div>
@@ -206,7 +206,7 @@
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-muted-foreground">ยอดรับของมือนี้</p>
-								<p class="text-sm text-muted-foreground">{formatCurrency(round.amount)}</p>
+								<p class="text-sm text-muted-foreground">{formatCurrency(round.receiveAmount)}</p>
 							</div>
 						{/if}
 					</div>
