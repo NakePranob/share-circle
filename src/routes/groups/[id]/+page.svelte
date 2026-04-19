@@ -1,0 +1,305 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { groupsStore } from '$lib/stores/groups.svelte';
+	import { formatCurrency, formatDate, iOweForRound, totalIReceive, totalIOwe } from '$lib/utils/calculator';
+	import { toast } from 'svelte-sonner';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import { Separator } from '$lib/components/ui/separator';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import { CircleCheck, Circle, ArrowLeft, EllipsisVertical, Pencil } from '@lucide/svelte';
+	import type { Round } from '$lib/types';
+
+	const id = $derived(page.params.id ?? '');
+	const group = $derived(groupsStore.getById(id));
+
+	let editRound = $state<Round | null>(null);
+	let editDate = $state('');
+	let editAmount = $state(0);
+	let showDeleteDialog = $state(false);
+	let showMenu = $state(false);
+
+	const owe = $derived(group ? iOweForRound(group) : 0);
+	const sumReceive = $derived(group ? totalIReceive(group) : 0);
+	const sumOwe = $derived(group ? totalIOwe(group) : 0);
+	const paidCount = $derived(group?.rounds.filter((r) => r.status === 'paid').length ?? 0);
+
+	function openEdit(round: Round) {
+		editRound = round;
+		editDate = round.date;
+		editAmount = round.amount;
+	}
+
+	function saveEdit() {
+		if (!group || !editRound) return;
+		groupsStore.updateRound(group.id, editRound.roundNumber, {
+			date: editDate,
+			amount: editAmount
+		});
+		toast.success('แก้ไขเรียบร้อย');
+		editRound = null;
+	}
+
+	function markPaid(roundNumber: number) {
+		if (!group) return;
+		groupsStore.markRoundPaid(group.id, roundNumber);
+		toast.success('บันทึกแล้ว');
+	}
+
+	function markPending(roundNumber: number) {
+		if (!group) return;
+		groupsStore.markRoundPending(group.id, roundNumber);
+		toast.success('ย้อนกลับเป็นรอแล้ว');
+	}
+
+	function deleteGroup() {
+		if (!group) return;
+		groupsStore.remove(group.id);
+		toast.success('ลบวงแล้ว');
+		goto('/groups');
+	}
+
+	function toggleActive() {
+		if (!group) return;
+		groupsStore.toggleActive(group.id);
+		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+		showMenu = false;
+	}
+
+	// Preview calc for edit dialog
+	const editPreviewOwe = $derived.by(() => {
+		if (!group || !editRound) return 0;
+		if (editRound.isMyRound) return 0;
+		// Recalc owe with updated amount if this round is a my-round (it's not, so just return current owe)
+		return owe;
+	});
+
+	const editPreviewReceive = $derived.by(() => {
+		if (!editRound?.isMyRound) return 0;
+		return editAmount;
+	});
+</script>
+
+{#if !group}
+	<div class="flex h-full items-center justify-center p-8">
+		<p class="text-muted-foreground">ไม่พบวงแชร์</p>
+	</div>
+{:else}
+	<div class="p-4">
+		<header class="mb-4 flex items-center justify-between">
+			<div class="flex items-center gap-3">
+				<button onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
+					<ArrowLeft class="h-5 w-5" />
+				</button>
+				<div>
+					<h1 class="text-xl font-bold">{group.name}</h1>
+					{#if !group.isActive}
+						<Badge variant="outline" class="text-xs opacity-60">ปิดแล้ว</Badge>
+					{/if}
+				</div>
+			</div>
+
+			<div class="relative">
+				<button onclick={() => (showMenu = !showMenu)} class="rounded-full p-2 hover:bg-muted">
+					<EllipsisVertical class="h-5 w-5" />
+				</button>
+				{#if showMenu}
+					<div class="absolute right-0 top-10 z-10 min-w-40 rounded-lg border border-border bg-popover shadow-lg">
+						<button onclick={toggleActive} class="w-full px-4 py-2 text-left text-sm hover:bg-muted">
+							{group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
+						</button>
+						<Separator />
+						<button
+							onclick={() => { showDeleteDialog = true; showMenu = false; }}
+							class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
+						>
+							ลบวง
+						</button>
+					</div>
+				{/if}
+			</div>
+		</header>
+
+		<!-- Summary -->
+		<div class="mb-4 grid grid-cols-2 gap-3">
+			<div class="rounded-xl bg-green-50 p-3 dark:bg-green-950/20">
+				<p class="text-xs text-muted-foreground">รับรวม</p>
+				<p class="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(sumReceive)}</p>
+			</div>
+			<div class="rounded-xl bg-red-50 p-3 dark:bg-red-950/20">
+				<p class="text-xs text-muted-foreground">จ่ายรวม</p>
+				<p class="text-lg font-bold text-red-500">{formatCurrency(sumOwe)}</p>
+			</div>
+		</div>
+
+		<!-- Info -->
+		<div class="mb-4 grid grid-cols-2 gap-3 rounded-xl bg-muted/50 p-4 text-sm">
+			<div>
+				<p class="text-xs text-muted-foreground">จำนวนมือ</p>
+				<p class="font-medium">{group.rounds.length} มือ</p>
+			</div>
+			<div>
+				<p class="text-xs text-muted-foreground">มือของเรา</p>
+				<p class="font-medium">
+					{group.rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber).join(', ') || '—'}
+				</p>
+			</div>
+			<div>
+				<p class="text-xs text-muted-foreground">จ่ายต่อมือ</p>
+				<p class="font-medium">{formatCurrency(owe)}</p>
+			</div>
+			<div>
+				<p class="text-xs text-muted-foreground">ความคืบหน้า</p>
+				<p class="font-medium">{paidCount}/{group.rounds.length} มือ</p>
+			</div>
+		</div>
+
+		<div class="mb-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
+			<span class="text-muted-foreground">กำไร/ขาดทุน</span>
+			<span class="font-bold {sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}">
+				{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
+			</span>
+		</div>
+
+		<Separator class="mb-4" />
+
+		<!-- Rounds list -->
+		<h2 class="mb-3 font-semibold">รายการมือ</h2>
+		<div class="space-y-2">
+			{#each group.rounds as round}
+				<div class="rounded-xl border bg-card p-4 {round.isMyRound ? 'border-green-200 dark:border-green-900' : 'border-border'} {round.status === 'paid' ? 'opacity-70' : ''}">
+					<div class="mb-2 flex items-center justify-between">
+						<div class="flex items-center gap-2">
+							{#if round.status === 'paid'}
+								<CircleCheck class="h-4 w-4 text-green-500" />
+							{:else}
+								<Circle class="h-4 w-4 text-muted-foreground" />
+							{/if}
+							<span class="font-medium">มือ {round.roundNumber}</span>
+							{#if round.isMyRound}
+								<span class="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-medium text-white">เรารับ</span>
+							{/if}
+							<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
+						</div>
+						<button
+							onclick={() => openEdit(round)}
+							class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+						>
+							<Pencil class="h-3.5 w-3.5" />
+						</button>
+					</div>
+
+					<div class="mb-3 flex items-center justify-between text-sm">
+						{#if round.isMyRound}
+							<div>
+								<p class="text-xs text-muted-foreground">เราได้รับ</p>
+								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.amount)}</p>
+							</div>
+						{:else}
+							<div>
+								<p class="text-xs text-muted-foreground">เราจ่าย</p>
+								<p class="font-bold text-red-500">{formatCurrency(owe)}</p>
+							</div>
+							<div class="text-right">
+								<p class="text-xs text-muted-foreground">ยอดรับของมือนี้</p>
+								<p class="text-sm text-muted-foreground">{formatCurrency(round.amount)}</p>
+							</div>
+						{/if}
+					</div>
+
+					{#if round.status === 'pending'}
+						<Button
+							size="sm"
+							onclick={() => markPaid(round.roundNumber)}
+							class="w-full {round.isMyRound ? 'bg-green-600 hover:bg-green-700 text-white' : ''}"
+							variant={round.isMyRound ? 'default' : 'outline'}
+						>
+							<CircleCheck class="mr-1 h-3 w-3" />
+							{round.isMyRound ? 'รับแล้ว' : 'จ่ายแล้ว'}
+						</Button>
+					{:else}
+						<button
+							onclick={() => markPending(round.roundNumber)}
+							class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+						>
+							↩ ย้อนกลับ
+						</button>
+					{/if}
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<!-- Edit dialog -->
+	<Dialog.Root open={editRound !== null} onOpenChange={(o) => !o && (editRound = null)}>
+		<Dialog.Content class="max-w-sm">
+			<Dialog.Header>
+				<Dialog.Title>
+					แก้ไขมือ {editRound?.roundNumber}
+					{#if editRound?.isMyRound}
+						<span class="text-sm font-normal text-green-600"> (มือของเรา)</span>
+					{/if}
+				</Dialog.Title>
+			</Dialog.Header>
+
+			<div class="space-y-4">
+				<div class="space-y-2">
+					<Label for="edit-date">วันที่</Label>
+					<Input id="edit-date" type="date" bind:value={editDate} />
+				</div>
+				<div class="space-y-2">
+					<Label for="edit-amount">ยอดรับของมือนี้ (บาท)</Label>
+					<Input id="edit-amount" type="number" min="1" bind:value={editAmount} />
+				</div>
+
+				<div class="rounded-lg bg-muted/50 p-3 text-sm">
+					{#if editRound?.isMyRound}
+						<div class="flex justify-between">
+							<span>เราได้รับ</span>
+							<span class="font-bold text-green-600">{formatCurrency(editPreviewReceive)}</span>
+						</div>
+					{:else}
+						<div class="flex justify-between">
+							<span>เราจ่าย</span>
+							<span class="font-bold text-red-500">{formatCurrency(editPreviewOwe)}</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<Dialog.Footer>
+				<Button variant="outline" onclick={() => (editRound = null)}>ยกเลิก</Button>
+				<Button onclick={saveEdit}>บันทึก</Button>
+			</Dialog.Footer>
+		</Dialog.Content>
+	</Dialog.Root>
+
+	<!-- Delete confirmation -->
+	<AlertDialog.Root open={showDeleteDialog} onOpenChange={(o) => (showDeleteDialog = o)}>
+		<AlertDialog.Content>
+			<AlertDialog.Header>
+				<AlertDialog.Title>ลบวงแชร์</AlertDialog.Title>
+				<AlertDialog.Description>
+					ต้องการลบวง "{group.name}" ใช่ไหม? ไม่สามารถย้อนกลับได้
+				</AlertDialog.Description>
+			</AlertDialog.Header>
+			<AlertDialog.Footer>
+				<AlertDialog.Cancel>ยกเลิก</AlertDialog.Cancel>
+				<AlertDialog.Action
+					onclick={deleteGroup}
+					class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+				>
+					ลบ
+				</AlertDialog.Action>
+			</AlertDialog.Footer>
+		</AlertDialog.Content>
+	</AlertDialog.Root>
+
+	{#if showMenu}
+		<button class="fixed inset-0 z-0" onclick={() => (showMenu = false)} aria-label="close menu"></button>
+	{/if}
+{/if}
