@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { SvelteDate } from 'svelte/reactivity';
-	import type { DayData } from '$features/shared/types';
+	import type { DayData } from '$features/calendar/types';
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import DayCell from './DayCell.svelte';
 

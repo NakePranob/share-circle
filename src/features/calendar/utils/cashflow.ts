@@ -1,4 +1,6 @@
-import type { Group, Transaction, Wallet, DayData } from '$features/shared/types';
+import type { Group } from '$features/groups/types';
+import type { Transaction, Wallet } from '$features/wallet/types';
+import type { DayData } from '$features/calendar/types';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 import { iOweForRound } from '$features/groups/utils/calculators';
 

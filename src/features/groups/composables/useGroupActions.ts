@@ -1,6 +1,6 @@
 import { groupsStore } from '$features/groups/stores/groups.svelte';
 import { toast } from 'svelte-sonner';
-import type { Round } from '$features/shared/types';
+import type { Round } from '$features/groups/types';
 import { TOAST_MESSAGES } from '$features/groups/constants';
 
 export function useGroupActions() {

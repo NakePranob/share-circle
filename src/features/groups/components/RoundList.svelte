@@ -2,7 +2,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { CircleCheck, Circle, Pencil } from '@lucide/svelte';
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
-	import type { Group, Round } from '$features/shared/types';
+	import type { Group, Round } from '$features/groups/types';
 
 	interface Props {
 		group: Group;

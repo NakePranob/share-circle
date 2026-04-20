@@ -2,7 +2,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Progress } from '$lib/components/ui/progress';
 	import { formatCurrency, formatDate, iOweForRound } from '$lib/utils/calculator';
-	import type { Group } from '$features/shared/types';
+	import type { Group } from '$features/groups/types';
 
 	interface Props {
 		group: Group;

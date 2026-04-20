@@ -1,5 +1,5 @@
 import { createGenericStore } from '$lib/stores/genericStore.svelte';
-import type { Group, Round } from '$features/shared/types';
+import type { Group, Round } from '$features/groups/types';
 
 const genericStore = createGenericStore<Group>({
 	key: 'share-circle-groups',

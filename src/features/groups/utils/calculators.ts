@@ -1,5 +1,5 @@
 import { SvelteDate } from 'svelte/reactivity';
-import type { Group, Round } from '$features/shared/types';
+import type { Group, Round } from '$features/groups/types';
 import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
 
 export function buildRoundsFromFormData(data: GroupFormData): Round[] {

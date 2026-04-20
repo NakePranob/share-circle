@@ -1,5 +1,5 @@
 import { persistedState } from '$lib/stores/persisted.svelte';
-import type { Wallet, Transaction, TransactionType } from '$features/shared/types';
+import type { Wallet, Transaction, TransactionType } from '$features/wallet/types';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 
 const _store = persistedState<Wallet>('share-circle-wallet', {

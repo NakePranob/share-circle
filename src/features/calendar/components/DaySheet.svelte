@@ -2,7 +2,7 @@
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { Button } from '$lib/components/ui/button';
 	import { SvelteDate } from 'svelte/reactivity';
-	import type { DayData } from '$features/shared/types';
+	import type { DayData } from '$features/calendar/types';
 	import { formatCurrency } from '$lib/utils/calculator';
 
 	interface Props {

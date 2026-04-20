@@ -1,5 +1,7 @@
 import { SvelteDate } from 'svelte/reactivity';
-import type { Group, Wallet, DayData } from '$features/shared/types';
+import type { Group } from '$features/groups/types';
+import type { Wallet } from '$features/wallet/types';
+import type { DayData } from '$features/calendar/types';
 import { buildCashFlow, buildPaidCashFlow } from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 

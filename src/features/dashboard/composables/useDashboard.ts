@@ -1,5 +1,6 @@
 import { buildCashFlow, buildPaidCashFlow, getUpcomingPayments, getUpcomingPayouts } from '$features/calendar/utils/cashflow';
-import type { Group, Wallet } from '$features/shared/types';
+import type { Group } from '$features/groups/types';
+import type { Wallet } from '$features/wallet/types';
 
 export function useDashboard(getGroups: () => Group[], wallet: Wallet, year: number, month: number) {
 	const groups = getGroups();

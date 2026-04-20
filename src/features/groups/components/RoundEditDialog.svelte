@@ -4,7 +4,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { formatCurrency } from '$lib/utils/calculator';
-	import type { Round } from '$features/shared/types';
+	import type { Round } from '$features/groups/types';
 
 	interface Props {
 		editRound: Round | null;

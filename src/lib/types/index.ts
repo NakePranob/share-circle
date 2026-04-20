@@ -1,10 +1,4 @@
-// Re-export from shared types for backward compatibility
-export type {
-	RoundStatus,
-	TransactionType,
-	Round,
-	Group,
-	Transaction,
-	Wallet,
-	DayData
-} from '../../features/shared/types';
+// Re-export from feature types for backward compatibility
+export type { RoundStatus, Round, Group } from '../../features/groups/types';
+export type { TransactionType, Transaction, Wallet } from '../../features/wallet/types';
+export type { DayData } from '../../features/calendar/types';
