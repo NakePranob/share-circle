@@ -6,22 +6,90 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import * as RadioGroup from '$lib/components/ui/radio-group';
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
-	import type { useGroupForm } from '$features/groups/composables/useGroupForm.svelte';
+	import { groupFormSchema } from '$features/groups/schemas/groupFormSchema';
+	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
+	import { buildRoundsFromFormData, iOweForRound, totalIReceive, totalIOwe } from '$features/groups/utils/calculators';
+	import { SvelteDate } from 'svelte/reactivity';
+	import {
+		DEFAULT_TOTAL_ROUNDS,
+		DEFAULT_FREQUENCY,
+		DEFAULT_RECEIVE_AMOUNT_PER_ROUND,
+		DEFAULT_FIXED_PAYMENT_AMOUNT
+	} from '$features/groups/constants';
 
 	interface Props {
-		form: ReturnType<typeof useGroupForm>;
-		onSubmit: () => void;
+		onSubmit: (data: GroupFormData) => void;
 	}
 
-	let { form, onSubmit }: Props = $props();
+	let { onSubmit }: Props = $props();
+
+	const initialFormState = {
+		groupName: '',
+		totalRounds: DEFAULT_TOTAL_ROUNDS,
+		playMode: 'fixed' as 'fixed' | 'stepped',
+		frequency: DEFAULT_FREQUENCY,
+		receiveAmountPerRound: DEFAULT_RECEIVE_AMOUNT_PER_ROUND,
+		startDate: new SvelteDate().toISOString().split('T')[0],
+		fixedPaymentAmount: DEFAULT_FIXED_PAYMENT_AMOUNT,
+		steppedPayments: [] as number[],
+		selectedRounds: [] as number[]
+	};
+
+	let form = $state({ ...initialFormState });
+	let errors = $state<Record<string, string>>({});
+
+	const formData = $derived<GroupFormData>({
+		...form,
+		fixedPaymentAmount: form.playMode === 'fixed' ? form.fixedPaymentAmount : undefined,
+		steppedPayments: form.playMode === 'stepped' ? form.steppedPayments : undefined
+	});
+
+	const rounds = $derived(buildRoundsFromFormData(formData));
+
+	const previewGroup = $derived({ id: '', name: form.groupName, rounds, createdAt: '', isActive: true });
+
+	const myRoundNums = $derived(rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber));
+	const owePerRound = $derived(iOweForRound(previewGroup));
+	const sumReceive = $derived(totalIReceive(previewGroup));
+	const sumOwe = $derived(totalIOwe(previewGroup));
+
+	function validate(): boolean {
+		const result = groupFormSchema.safeParse(formData);
+
+		if (!result.success) {
+			const errs: Record<string, string> = {};
+			for (const error of result.error.issues) {
+				errs[error.path[0] as string] = error.message;
+			}
+			errors = errs;
+			return false;
+		}
+
+		errors = {};
+		return true;
+	}
+
+	function toggleRound(i: number) {
+		const index = form.selectedRounds.indexOf(i);
+		if (index === -1) {
+			form.selectedRounds = [...form.selectedRounds, i];
+		} else {
+			form.selectedRounds = form.selectedRounds.filter((_, idx) => idx !== index);
+		}
+	}
+
+	function resetForm() {
+		Object.assign(form, { ...initialFormState, startDate: new SvelteDate().toISOString().split('T')[0] });
+		errors = {};
+	}
 </script>
 
-<form onsubmit={(e) => { e.preventDefault(); onSubmit(); }} class="space-y-6">
+<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) onSubmit(formData); resetForm(); }} class="space-y-6">
 	<!-- Name -->
 	<div class="space-y-2">
-		<Label for="name">ชื่อวง</Label>
-		<Input id="name" value={form.groupName} oninput={(e) => form.groupName = e.currentTarget.value} placeholder="เช่น วงแชร์บ้าน 2569" />
-		{#if form.errors.name}<p class="text-xs text-destructive">{form.errors.name}</p>{/if}
+		<Label for="groupName">ชื่อวง</Label>
+		<Input id="groupName" bind:value={form.groupName} placeholder="เช่น วงแชร์บ้าน 2569" />
+		{#if errors.groupName}<p class="text-xs text-destructive">{errors.groupName}</p>{/if}
 	</div>
 
 	<Separator />
@@ -32,29 +100,32 @@
 
 		<div class="space-y-2">
 			<Label for="startDate">วันเริ่มต้น</Label>
-			<Input id="startDate" type="date" value={form.startDate} onchange={(e) => form.startDate = e.currentTarget.value} />
+			<Input id="startDate" type="date" bind:value={form.startDate} />
+			{#if errors.startDate}<p class="text-xs text-destructive">{errors.startDate}</p>{/if}
 		</div>
 
 		<div class="grid grid-cols-2 gap-4">
 			<div class="space-y-2">
 				<Label for="totalRounds">จำนวนมือทั้งหมด</Label>
-				<Input id="totalRounds" type="number" min="2" value={form.totalRounds} oninput={(e) => form.totalRounds = Number(e.currentTarget.value)} class="text-center" />
+				<Input id="totalRounds" type="number" min="2" bind:value={form.totalRounds} class="text-center" />
+				{#if errors.totalRounds}<p class="text-xs text-destructive">{errors.totalRounds}</p>{/if}
 			</div>
 			<div class="space-y-2">
 				<Label for="frequency">ความถี่ (วัน)</Label>
-				<Input id="frequency" type="number" min="1" value={form.frequency} oninput={(e) => form.frequency = Number(e.currentTarget.value)} class="text-center" />
+				<Input id="frequency" type="number" min="1" bind:value={form.frequency} class="text-center" />
+				{#if errors.frequency}<p class="text-xs text-destructive">{errors.frequency}</p>{/if}
 			</div>
 		</div>
 
 		<div class="space-y-2">
-			<Label for="receiveAmount">ยอดรับต่อมือ (บาท)</Label>
-			<Input id="receiveAmount" type="number" min="1" value={form.receiveAmountPerRound} oninput={(e) => form.receiveAmountPerRound = Number(e.currentTarget.value)} />
-			{#if form.errors.receiveAmount}<p class="text-xs text-destructive">{form.errors.receiveAmount}</p>{/if}
+			<Label for="receiveAmountPerRound">ยอดรับต่อมือ (บาท)</Label>
+			<Input id="receiveAmountPerRound" type="number" min="1" bind:value={form.receiveAmountPerRound} />
+			{#if errors.receiveAmountPerRound}<p class="text-xs text-destructive">{errors.receiveAmountPerRound}</p>{/if}
 		</div>
 
 		<div class="space-y-2">
 			<Label>รูปแบบการเล่น</Label>
-			<RadioGroup.Root value={form.playMode} onValueChange={(v) => form.playMode = v as 'fixed' | 'stepped'}>
+			<RadioGroup.Root bind:value={form.playMode}>
 				<div class="flex items-center space-x-2">
 					<RadioGroup.Item value="fixed" id="fixed" />
 					<Label for="fixed" class="font-normal cursor-pointer">แบบคงที่ - จ่ายเท่ากันทุกมือ</Label>
@@ -68,14 +139,14 @@
 
 		{#if form.playMode === 'fixed'}
 			<div class="space-y-2">
-				<Label for="fixedPayment">ยอดจ่ายต่อมือ (บาท)</Label>
-				<Input id="fixedPayment" type="number" min="1" value={form.fixedPaymentAmount} oninput={(e) => form.fixedPaymentAmount = Number(e.currentTarget.value)} />
-				{#if form.errors.fixedPayment}<p class="text-xs text-destructive">{form.errors.fixedPayment}</p>{/if}
+				<Label for="fixedPaymentAmount">ยอดจ่ายต่อมือ (บาท)</Label>
+				<Input id="fixedPaymentAmount" type="number" min="1" bind:value={form.fixedPaymentAmount} />
+				{#if errors.fixedPaymentAmount}<p class="text-xs text-destructive">{errors.fixedPaymentAmount}</p>{/if}
 			</div>
 		{:else}
 			<div class="space-y-2">
 				<Label>ยอดจ่ายต่อมือ (บาท)</Label>
-				{#if form.errors.steppedPayments}<p class="text-xs text-destructive">{form.errors.steppedPayments}</p>{/if}
+				{#if errors.steppedPayments}<p class="text-xs text-destructive">{errors.steppedPayments}</p>{/if}
 				<div class="grid grid-cols-5 gap-2">
 					{#each Array.from({ length: form.totalRounds }), i (i)}
 						<div class="space-y-1">
@@ -83,8 +154,7 @@
 							<Input
 								type="number"
 								min="1"
-								value={form.steppedPayments[i]}
-								oninput={(e) => form.steppedPayments[i] = Number(e.currentTarget.value)}
+								bind:value={form.steppedPayments[i]}
 								class="h-8 text-sm text-center"
 							/>
 						</div>
@@ -100,21 +170,21 @@
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
 			<Label>เลือกมือที่รับ</Label>
-			<span class="text-xs text-muted-foreground">{form.selectedRounds.size}/{form.totalRounds} มือ</span>
+			<span class="text-xs text-muted-foreground">{form.selectedRounds.length}/{form.totalRounds} มือ</span>
 		</div>
 
-		{#if form.errors.myRound}<p class="text-xs text-destructive">{form.errors.myRound}</p>{/if}
+		{#if errors.selectedRounds}<p class="text-xs text-destructive">{errors.selectedRounds}</p>{/if}
 
 		<div class="grid grid-cols-2 gap-2">
-			{#each form.rounds as round, i (i)}
+			{#each rounds as round, i (i)}
 				<button
 					type="button"
-					onclick={() => form.toggleRound(i)}
-					class="rounded-lg border p-3 text-left transition-colors {form.selectedRounds.has(i) ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border hover:bg-muted/50'}"
+					onclick={() => toggleRound(i)}
+					class="rounded-lg border p-3 text-left transition-colors {form.selectedRounds.includes(i) ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border hover:bg-muted/50'}"
 				>
 					<div class="flex items-center justify-between mb-1">
 						<span class="font-medium">มือ {i + 1}</span>
-						<Checkbox checked={form.selectedRounds.has(i)} class="pointer-events-none" />
+						<Checkbox checked={form.selectedRounds.includes(i)} class="pointer-events-none" />
 					</div>
 					<p class="text-xs text-muted-foreground">{formatDate(round.date)}</p>
 					<p class="text-xs text-muted-foreground">จ่าย: {formatCurrency(round.paymentAmount)}</p>
@@ -124,27 +194,27 @@
 	</div>
 
 	<!-- Summary preview -->
-	{#if form.myRoundNums.length > 0}
+	{#if myRoundNums.length > 0}
 		<div class="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
 			<p class="text-sm font-medium">สรุป</p>
 
 			<div class="grid grid-cols-2 gap-3 text-sm">
 				<div class="rounded-lg bg-green-50 p-3 dark:bg-green-950/20">
 					<p class="text-xs text-muted-foreground">เราได้รับรวม</p>
-					<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(form.sumReceive)}</p>
-					<p class="text-xs text-muted-foreground">มือ {form.myRoundNums.join(', ')}</p>
+					<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(sumReceive)}</p>
+					<p class="text-xs text-muted-foreground">มือ {myRoundNums.join(', ')}</p>
 				</div>
 				<div class="rounded-lg bg-red-50 p-3 dark:bg-red-950/20">
 					<p class="text-xs text-muted-foreground">เราจ่ายรวม</p>
-					<p class="font-bold text-red-500">{formatCurrency(form.sumOwe)}</p>
-					<p class="text-xs text-muted-foreground">มือละ {formatCurrency(form.owePerRound)}</p>
+					<p class="font-bold text-red-500">{formatCurrency(sumOwe)}</p>
+					<p class="text-xs text-muted-foreground">มือละ {formatCurrency(owePerRound)}</p>
 				</div>
 			</div>
 
 			<div class="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
 				<span class="text-muted-foreground">กำไร/ขาดทุน</span>
-				<span class="font-bold {form.sumReceive - form.sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}">
-					{form.sumReceive - form.sumOwe >= 0 ? '+' : ''}{formatCurrency(form.sumReceive - form.sumOwe)}
+				<span class="font-bold {sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}">
+					{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
 				</span>
 			</div>
 		</div>

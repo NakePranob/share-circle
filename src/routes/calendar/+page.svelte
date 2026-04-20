@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { groupsStore } from '$lib/stores/groups.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { useCalendar } from '$features/calendar/composables/useCalendar.svelte';
 	import { useWalletActions } from '$features/wallet/composables/useWalletActions.svelte';
 	import WalletCard from '$features/calendar/components/WalletCard.svelte';
@@ -7,13 +7,14 @@
 	import DaySheet from '$features/calendar/components/DaySheet.svelte';
 	import WalletDialogs from '$features/wallet/components/WalletDialogs.svelte';
 	import { toast } from 'svelte-sonner';
+	import { TOAST_MESSAGES } from '$features/calendar/constants';
 
 	const walletActions = useWalletActions();
 	const calendar = useCalendar(() => groupsStore.groups, walletActions.wallet);
 
 	function markAsPaid(groupId: string, roundNumber: number) {
 		groupsStore.markRoundPaid(groupId, roundNumber);
-		toast.success('จ่ายเงินเรียบร้อย');
+		toast.success(TOAST_MESSAGES.MARK_AS_PAID);
 		// Refresh the selected day data
 		if (calendar.selectedDay) {
 			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
@@ -57,17 +58,4 @@
 	onMarkAsPaid={markAsPaid}
 />
 
-<WalletDialogs
-	showBalanceDialog={walletActions.showBalanceDialog}
-	showDepositDialog={walletActions.showDepositDialog}
-	showWithdrawDialog={walletActions.showWithdrawDialog}
-	balanceInput={walletActions.balanceInput}
-	txnAmount={walletActions.txnAmount}
-	txnNote={walletActions.txnNote}
-	onBalanceDialogChange={(o) => (walletActions.showBalanceDialog = o)}
-	onDepositDialogChange={(o) => (walletActions.showDepositDialog = o)}
-	onWithdrawDialogChange={(o) => (walletActions.showWithdrawDialog = o)}
-	onSaveBalance={walletActions.saveBalance}
-	onDeposit={walletActions.deposit}
-	onWithdraw={walletActions.withdraw}
-/>
+<WalletDialogs actions={walletActions} />

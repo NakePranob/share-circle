@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$lib/stores/groups.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { CirclePlus, Users } from '@lucide/svelte';

@@ -3,57 +3,34 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import type { useWalletActions } from '$features/wallet/composables/useWalletActions.svelte';
 
 	interface Props {
-		showBalanceDialog: boolean;
-		showDepositDialog: boolean;
-		showWithdrawDialog: boolean;
-		balanceInput: number;
-		txnAmount: number;
-		txnNote: string;
-		onBalanceDialogChange: (open: boolean) => void;
-		onDepositDialogChange: (open: boolean) => void;
-		onWithdrawDialogChange: (open: boolean) => void;
-		onSaveBalance: () => void;
-		onDeposit: () => void;
-		onWithdraw: () => void;
+		actions: ReturnType<typeof useWalletActions>;
 	}
 
-	let {
-		showBalanceDialog,
-		showDepositDialog,
-		showWithdrawDialog,
-		balanceInput,
-		txnAmount,
-		txnNote,
-		onBalanceDialogChange,
-		onDepositDialogChange,
-		onWithdrawDialogChange,
-		onSaveBalance,
-		onDeposit,
-		onWithdraw
-	}: Props = $props();
+	let { actions }: Props = $props();
 </script>
 
 <!-- Set balance dialog -->
-<Dialog.Root open={showBalanceDialog} onOpenChange={onBalanceDialogChange}>
+<Dialog.Root open={actions.showBalanceDialog} onOpenChange={(o) => (actions.showBalanceDialog = o)}>
 	<Dialog.Content class="max-w-sm">
 		<Dialog.Header>
 			<Dialog.Title>ตั้งทุนเริ่มต้น</Dialog.Title>
 		</Dialog.Header>
 		<div class="space-y-3">
 			<Label for="balance">ยอดเงิน (บาท)</Label>
-			<Input id="balance" type="number" bind:value={balanceInput} />
+			<Input id="balance" type="number" bind:value={actions.balanceInput} />
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => onBalanceDialogChange(false)}>ยกเลิก</Button>
-			<Button onclick={onSaveBalance}>บันทึก</Button>
+			<Button variant="outline" onclick={() => (actions.showBalanceDialog = false)}>ยกเลิก</Button>
+			<Button onclick={actions.saveBalance}>บันทึก</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
 
 <!-- Deposit dialog -->
-<Dialog.Root open={showDepositDialog} onOpenChange={onDepositDialogChange}>
+<Dialog.Root open={actions.showDepositDialog} onOpenChange={(o) => (actions.showDepositDialog = o)}>
 	<Dialog.Content class="max-w-sm">
 		<Dialog.Header>
 			<Dialog.Title>เติมเงิน</Dialog.Title>
@@ -61,22 +38,22 @@
 		<div class="space-y-3">
 			<div class="space-y-2">
 				<Label for="deposit-amount">จำนวน (บาท)</Label>
-				<Input id="deposit-amount" type="number" min="1" bind:value={txnAmount} />
+				<Input id="deposit-amount" type="number" min="1" bind:value={actions.txnAmount} />
 			</div>
 			<div class="space-y-2">
 				<Label for="deposit-note">หมายเหตุ (ไม่บังคับ)</Label>
-				<Input id="deposit-note" bind:value={txnNote} placeholder="เช่น โบนัส" />
+				<Input id="deposit-note" bind:value={actions.txnNote} placeholder="เช่น โบนัส" />
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => onDepositDialogChange(false)}>ยกเลิก</Button>
-			<Button onclick={onDeposit} disabled={txnAmount <= 0}>เติม</Button>
+			<Button variant="outline" onclick={() => (actions.showDepositDialog = false)}>ยกเลิก</Button>
+			<Button onclick={actions.deposit} disabled={actions.txnAmount <= 0}>เติม</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
 
 <!-- Withdraw dialog -->
-<Dialog.Root open={showWithdrawDialog} onOpenChange={onWithdrawDialogChange}>
+<Dialog.Root open={actions.showWithdrawDialog} onOpenChange={(o) => (actions.showWithdrawDialog = o)}>
 	<Dialog.Content class="max-w-sm">
 		<Dialog.Header>
 			<Dialog.Title>เบิกเงิน</Dialog.Title>
@@ -84,16 +61,16 @@
 		<div class="space-y-3">
 			<div class="space-y-2">
 				<Label for="withdraw-amount">จำนวน (บาท)</Label>
-				<Input id="withdraw-amount" type="number" min="1" bind:value={txnAmount} />
+				<Input id="withdraw-amount" type="number" min="1" bind:value={actions.txnAmount} />
 			</div>
 			<div class="space-y-2">
 				<Label for="withdraw-note">หมายเหตุ (ไม่บังคับ)</Label>
-				<Input id="withdraw-note" bind:value={txnNote} placeholder="เช่น ค่าใช้จ่าย" />
+				<Input id="withdraw-note" bind:value={actions.txnNote} placeholder="เช่น ค่าใช้จ่าย" />
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => onWithdrawDialogChange(false)}>ยกเลิก</Button>
-			<Button onclick={onWithdraw} disabled={txnAmount <= 0} variant="destructive">เบิก</Button>
+			<Button variant="outline" onclick={() => (actions.showWithdrawDialog = false)}>ยกเลิก</Button>
+			<Button onclick={actions.withdraw} disabled={actions.txnAmount <= 0} variant="destructive">เบิก</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

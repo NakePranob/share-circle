@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { groupsStore } from '$lib/stores/groups.svelte';
-	import { walletStore } from '$lib/stores/wallet.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { walletStore } from '$features/wallet/stores/wallet.svelte';
 	import { paidTransactions } from '$lib/utils/cashflow';
 	import { formatCurrency } from '$lib/utils/calculator';
 	import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '$lib/components/ui/table';

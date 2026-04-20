@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$lib/stores/groups.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { formatCurrency, formatDate, iOweForRound, totalIReceive, totalIOwe } from '$lib/utils/calculator';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';

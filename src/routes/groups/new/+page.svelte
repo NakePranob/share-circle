@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$lib/stores/groups.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { toast } from 'svelte-sonner';
 	import { ArrowLeft } from '@lucide/svelte';
-	import { useGroupForm } from '$features/groups/composables/useGroupForm.svelte';
 	import GroupForm from '$features/groups/components/GroupForm.svelte';
+	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
+	import { buildRoundsFromFormData } from '$features/groups/utils/calculators';
 
-	const form = useGroupForm();
+	function submit(data: GroupFormData) {
+		const rounds = buildRoundsFromFormData(data);
 
-	function submit() {
-		if (!form.validate()) return;
 		groupsStore.add({
-			name: form.groupName.trim(),
-			rounds: form.previewRounds,
+			name: data.groupName.trim(),
+			rounds,
 			isActive: true
 		});
 		toast.success('สร้างวงแชร์เรียบร้อย!');
@@ -28,5 +28,5 @@
 		<h1 class="text-xl font-bold">สร้างวงใหม่</h1>
 	</header>
 
-	<GroupForm {form} onSubmit={submit} />
+	<GroupForm onSubmit={submit} />
 </div>

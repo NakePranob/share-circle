@@ -1,5 +1,6 @@
 import { persistedState } from '$lib/stores/persisted.svelte';
 import type { Wallet, Transaction, TransactionType } from '$features/shared/types';
+import { toISODate } from '$features/shared/utils/dateHelpers';
 
 const _store = persistedState<Wallet>('share-circle-wallet', {
 	initialBalance: 0,
@@ -15,7 +16,7 @@ function addTransaction(type: TransactionType, amount: number, note = ''): void 
 		id: crypto.randomUUID(),
 		groupId: null,
 		roundNumber: null,
-		date: new Date().toISOString().split('T')[0],
+		date: toISODate(new Date()),
 		type,
 		amount,
 		isEstimate: false,

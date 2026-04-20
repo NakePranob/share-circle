@@ -1,6 +1,7 @@
 import { SvelteDate } from 'svelte/reactivity';
 import type { Group, Wallet, DayData } from '$features/shared/types';
 import { buildCashFlow, buildPaidCashFlow } from '$features/calendar/utils/cashflow';
+import { toISODate } from '$features/shared/utils/dateHelpers';
 
 export function useCalendar(getGroups: () => Group[], wallet: Wallet) {
 	const _now = new SvelteDate();
@@ -30,7 +31,7 @@ export function useCalendar(getGroups: () => Group[], wallet: Wallet) {
 		)
 	);
 
-	const todayStr = new SvelteDate().toISOString().split('T')[0];
+	const todayStr = toISODate(new SvelteDate());
 
 	function prevMonth() {
 		if (viewMonth === 0) {

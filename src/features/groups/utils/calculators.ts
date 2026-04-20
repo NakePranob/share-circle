@@ -1,4 +1,23 @@
+import { SvelteDate } from 'svelte/reactivity';
 import type { Group, Round } from '$features/shared/types';
+import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
+
+export function buildRoundsFromFormData(data: GroupFormData): Round[] {
+	const result: Round[] = [];
+	for (let i = 0; i < data.totalRounds; i++) {
+		const date = new SvelteDate(data.startDate);
+		date.setDate(date.getDate() + i * data.frequency);
+		result.push({
+			date: date.toISOString().split('T')[0],
+			paymentAmount: data.playMode === 'fixed' ? (data.fixedPaymentAmount ?? 0) : (data.steppedPayments?.[i] ?? 0),
+			receiveAmount: data.receiveAmountPerRound,
+			isMyRound: data.selectedRounds.includes(i),
+			roundNumber: i + 1,
+			status: 'pending'
+		});
+	}
+	return result;
+}
 
 /** Sum of payment amounts for all rounds we receive in this group */
 export function myTotalOwe(group: Group): number {

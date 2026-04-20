@@ -1,4 +1,5 @@
 import type { Group, Transaction, Wallet, DayData } from '$features/shared/types';
+import { toISODate } from '$features/shared/utils/dateHelpers';
 import { iOweForRound } from '$features/groups/utils/calculators';
 
 function syntheticTransactions(groups: Group[]): Transaction[] {
@@ -221,7 +222,7 @@ export function getUpcomingPayments(
 export function getUpcomingPayouts(
 	groups: Group[]
 ): Array<{ group: Group; round: Group['rounds'][0] }> {
-	const today = new Date().toISOString().split('T')[0];
+	const today = toISODate(new Date());
 	const results: Array<{ group: Group; round: Group['rounds'][0] }> = [];
 
 	for (const group of groups) {

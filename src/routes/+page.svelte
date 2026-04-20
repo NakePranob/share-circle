@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$lib/stores/groups.svelte';
-	import { walletStore } from '$lib/stores/wallet.svelte';
+	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { walletStore } from '$features/wallet/stores/wallet.svelte';
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';

@@ -1,15 +1,10 @@
-import { persistedState } from './persisted.svelte';
+import { createGenericStore } from '$lib/stores/genericStore.svelte';
 import type { Group, Round } from '$features/shared/types';
 
-const _store = persistedState<Group[]>('share-circle-groups', []);
-
-function getAll(): Group[] {
-	return _store.value;
-}
-
-function getById(id: string): Group | undefined {
-	return _store.value.find((g) => g.id === id);
-}
+const genericStore = createGenericStore<Group>({
+	key: 'share-circle-groups',
+	initial: []
+});
 
 function add(group: Omit<Group, 'id' | 'createdAt'>): Group {
 	const full: Group = {
@@ -17,20 +12,11 @@ function add(group: Omit<Group, 'id' | 'createdAt'>): Group {
 		id: crypto.randomUUID(),
 		createdAt: new Date().toISOString()
 	};
-	_store.value = [..._store.value, full];
-	return full;
-}
-
-function update(id: string, updater: (g: Group) => Group): void {
-	_store.value = _store.value.map((g) => (g.id !== id ? g : updater(g)));
-}
-
-function remove(id: string): void {
-	_store.value = _store.value.filter((g) => g.id !== id);
+	return genericStore.add(full);
 }
 
 function updateRound(groupId: string, roundNumber: number, partial: Partial<Round>): void {
-	update(groupId, (g) => ({
+	genericStore.update(groupId, (g) => ({
 		...g,
 		rounds: g.rounds.map((r) => (r.roundNumber === roundNumber ? { ...r, ...partial } : r))
 	}));
@@ -45,17 +31,17 @@ function markRoundPending(groupId: string, roundNumber: number): void {
 }
 
 function toggleActive(id: string): void {
-	update(id, (g) => ({ ...g, isActive: !g.isActive }));
+	genericStore.update(id, (g) => ({ ...g, isActive: !g.isActive }));
 }
 
 export const groupsStore = {
 	get groups() {
-		return getAll();
+		return genericStore.items;
 	},
-	getById,
+	getById: genericStore.getById,
 	add,
-	update,
-	remove,
+	update: genericStore.update,
+	remove: genericStore.remove,
 	updateRound,
 	markRoundPaid,
 	markRoundPending,
