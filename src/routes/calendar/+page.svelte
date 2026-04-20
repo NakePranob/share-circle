@@ -174,11 +174,11 @@
 
 	<!-- Month navigation -->
 	<div class="mb-3 flex items-center justify-between">
-		<button onclick={prevMonth} class="rounded-full p-2 hover:bg-muted">
+		<button type="button" onclick={prevMonth} class="rounded-full p-2 hover:bg-muted">
 			<ChevronLeft class="h-5 w-5" />
 		</button>
 		<span class="font-semibold">{monthLabel}</span>
-		<button onclick={nextMonth} class="rounded-full p-2 hover:bg-muted">
+		<button type="button" onclick={nextMonth} class="rounded-full p-2 hover:bg-muted">
 			<ChevronRight class="h-5 w-5" />
 		</button>
 	</div>
@@ -211,6 +211,7 @@
 					{@const isNegative = dayData?.hasNegativeBalance ?? false}
 					{@const hasUnpaid = dayData?.transactions.length !== paidDayData?.transactions.length}
 					<button
+						type="button"
 						onclick={() => clickDay(cell.date)}
 						class="relative min-h-16 border-b border-border p-1 text-left transition-colors hover:bg-muted/50 {isToday ? 'bg-primary/5' : ''} {isLastRow ? '!border-b-0' : ''}"
 						class:border-r={!isSaturday}

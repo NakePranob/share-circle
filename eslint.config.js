@@ -47,7 +47,8 @@ export default defineConfig(
 			'svelte/no-at-html-tags': 'warn',
 			'svelte/button-has-type': 'warn',
 			'svelte/valid-each-key': 'warn',
-			'svelte/valid-compile': 'warn'
+			'svelte/valid-compile': 'warn',
+			'svelte/no-navigation-without-resolve': 'off'
 		}
 	}
 );

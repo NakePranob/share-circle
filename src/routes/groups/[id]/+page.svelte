@@ -92,7 +92,7 @@
 	<div class="p-4">
 		<header class="mb-4 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<button onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
+				<button type="button" onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
 					<ArrowLeft class="h-5 w-5" />
 				</button>
 				<div>
@@ -104,16 +104,17 @@
 			</div>
 
 			<div class="relative">
-				<button onclick={() => (showMenu = !showMenu)} class="rounded-full p-2 hover:bg-muted">
+				<button type="button" onclick={() => (showMenu = !showMenu)} class="rounded-full p-2 hover:bg-muted">
 					<EllipsisVertical class="h-5 w-5" />
 				</button>
 				{#if showMenu}
 					<div class="absolute right-0 top-10 z-10 min-w-40 rounded-lg border border-border bg-popover shadow-lg">
-						<button onclick={toggleActive} class="w-full px-4 py-2 text-left text-sm hover:bg-muted">
+						<button type="button" onclick={toggleActive} class="w-full px-4 py-2 text-left text-sm hover:bg-muted">
 							{group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
 						</button>
 						<Separator />
 						<button
+							type="button"
 							onclick={() => { showDeleteDialog = true; showMenu = false; }}
 							class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
 						>
@@ -186,6 +187,7 @@
 							<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
 						</div>
 						<button
+							type="button"
 							onclick={() => openEdit(round)}
 							class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
 						>
@@ -223,6 +225,7 @@
 						</Button>
 					{:else}
 						<button
+							type="button"
 							onclick={() => markPending(round.roundNumber)}
 							class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
 						>
@@ -300,6 +303,6 @@
 	</AlertDialog.Root>
 
 	{#if showMenu}
-		<button class="fixed inset-0 z-0" onclick={() => (showMenu = false)} aria-label="close menu"></button>
+		<button type="button" class="fixed inset-0 z-0" onclick={() => (showMenu = false)} aria-label="close menu"></button>
 	{/if}
 {/if}

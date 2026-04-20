@@ -115,7 +115,7 @@
 
 <div class="p-4">
 	<header class="mb-6 flex items-center gap-3">
-		<button onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
+		<button type="button" onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
 			<ArrowLeft class="h-5 w-5" />
 		</button>
 		<h1 class="text-xl font-bold">สร้างวงใหม่</h1>

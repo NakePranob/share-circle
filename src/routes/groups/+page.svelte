@@ -54,6 +54,7 @@
 						{@const next = nextRound(group)}
 						{@const owe = iOweForRound(group)}
 						<button
+							type="button"
 							onclick={() => goto(`/groups/${group.id}`)}
 							class="w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all hover:shadow-md"
 						>
@@ -96,6 +97,7 @@
 						{@const paid = paidCount(group)}
 						{@const total = group.rounds.length}
 						<button
+							type="button"
 							onclick={() => goto(`/groups/${group.id}`)}
 							class="w-full rounded-xl border border-border bg-card p-4 text-left opacity-70 shadow-sm transition-all hover:opacity-100"
 						>
