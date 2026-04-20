@@ -12,6 +12,19 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
+			// We pay every round
+			txns.push({
+				id: `${group.id}-${round.roundNumber}-payment`,
+				groupId: group.id,
+				roundNumber: round.roundNumber,
+				date: round.date,
+				type: 'payment',
+				amount: owe,
+				isEstimate: false,
+				note: `${group.name} มือ ${round.roundNumber}`
+			});
+
+			// If it's our round, we also receive money
 			if (round.isMyRound) {
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout`,
@@ -22,17 +35,6 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 					amount: round.receiveAmount,
 					isEstimate: false,
 					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
-				});
-			} else {
-				txns.push({
-					id: `${group.id}-${round.roundNumber}-payment`,
-					groupId: group.id,
-					roundNumber: round.roundNumber,
-					date: round.date,
-					type: 'payment',
-					amount: owe,
-					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber}`
 				});
 			}
 		}
@@ -49,21 +51,7 @@ function paidTransactions(groups: Group[]): Transaction[] {
 		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
-			// Only include rounds that are paid
-			if (round.status !== 'paid') continue;
-
-			if (round.isMyRound) {
-				txns.push({
-					id: `${group.id}-${round.roundNumber}-payout-paid`,
-					groupId: group.id,
-					roundNumber: round.roundNumber,
-					date: round.date,
-					type: 'payout',
-					amount: round.receiveAmount,
-					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
-				});
-			} else {
+			if (round.status === 'paid') {
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payment-paid`,
 					groupId: group.id,
@@ -73,6 +61,19 @@ function paidTransactions(groups: Group[]): Transaction[] {
 					amount: owe,
 					isEstimate: false,
 					note: `${group.name} มือ ${round.roundNumber}`
+				});
+			}
+
+			if (round.isMyRound && round.payoutStatus === 'received') {
+				txns.push({
+					id: `${group.id}-${round.roundNumber}-payout-paid`,
+					groupId: group.id,
+					roundNumber: round.roundNumber,
+					date: round.date,
+					type: 'payout',
+					amount: round.receiveAmount,
+					isEstimate: false,
+					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
 				});
 			}
 		}
@@ -206,7 +207,7 @@ export function getUpcomingPayments(
 		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
-			if (round.status === 'paid' || round.isMyRound) continue;
+			if (round.status === 'paid') continue;
 			const roundDate = new Date(round.date);
 			roundDate.setHours(0, 0, 0, 0);
 			if (roundDate <= future) {
@@ -230,7 +231,7 @@ export function getUpcomingPayouts(
 	for (const group of groups) {
 		if (!group.isActive) continue;
 		for (const round of group.rounds) {
-			if (round.isMyRound && round.status !== 'paid' && round.date >= today) {
+			if (round.isMyRound && round.payoutStatus !== 'received' && round.date >= today) {
 				results.push({ group, round });
 			}
 		}

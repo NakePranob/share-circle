@@ -20,6 +20,7 @@
 	let editRound = $state<Round | null>(null);
 	let editDate = $state('');
 	let editAmount = $state(0);
+	let editPaymentAmount = $state(0);
 	let showDeleteDialog = $state(false);
 	let showMenu = $state(false);
 
@@ -32,13 +33,15 @@
 		editRound = round;
 		editDate = round.date;
 		editAmount = round.receiveAmount;
+		editPaymentAmount = round.paymentAmount;
 	}
 
 	function saveEdit() {
 		if (!group || !editRound) return;
 		groupsStore.updateRound(group.id, editRound.roundNumber, {
 			date: editDate,
-			receiveAmount: editAmount
+			receiveAmount: editAmount,
+			paymentAmount: editPaymentAmount
 		});
 		toast.success('แก้ไขเรียบร้อย');
 		editRound = null;
@@ -53,6 +56,18 @@
 	function markPending(roundNumber: number) {
 		if (!group) return;
 		groupsStore.markRoundPending(group.id, roundNumber);
+		toast.success('ย้อนกลับเป็นรอแล้ว');
+	}
+
+	function markReceived(roundNumber: number) {
+		if (!group) return;
+		groupsStore.markRoundReceived(group.id, roundNumber);
+		toast.success('บันทึกแล้ว');
+	}
+
+	function markReceivedPending(roundNumber: number) {
+		if (!group) return;
+		groupsStore.updateRound(group.id, roundNumber, { payoutStatus: 'pending' });
 		toast.success('ย้อนกลับเป็นรอแล้ว');
 	}
 
@@ -150,7 +165,7 @@
 				</p>
 			</div>
 			<div>
-				<p class="text-xs text-muted-foreground">จ่ายต่อมือ</p>
+				<p class="text-xs text-muted-foreground">จ่ายเฉลี่ย/มือ</p>
 				<p class="font-medium">{formatCurrency(owe)}</p>
 			</div>
 			<div>
@@ -198,8 +213,18 @@
 					<div class="mb-3 flex items-center justify-between text-sm">
 						{#if round.isMyRound}
 							<div>
+								<p class="text-xs text-muted-foreground">เราจ่าย</p>
+								<p class="font-bold text-red-500">{formatCurrency(owe)}</p>
+							</div>
+							<div>
 								<p class="text-xs text-muted-foreground">เราได้รับ</p>
 								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.receiveAmount)}</p>
+							</div>
+							<div class="text-right">
+								<p class="text-xs text-muted-foreground">สุทธิ</p>
+								<p class="font-bold {round.receiveAmount - owe >= 0 ? 'text-green-600' : 'text-red-500'}">
+									{round.receiveAmount - owe >= 0 ? '+' : ''}{formatCurrency(round.receiveAmount - owe)}
+								</p>
 							</div>
 						{:else}
 							<div>
@@ -213,22 +238,36 @@
 						{/if}
 					</div>
 
-					{#if round.status === 'pending'}
-						<Button
-							size="sm"
-							onclick={() => markPaid(round.roundNumber)}
-							class="w-full {round.isMyRound ? 'bg-green-600 hover:bg-green-700 text-white' : ''}"
-							variant={round.isMyRound ? 'default' : 'outline'}
-						>
+					{#if round.isMyRound}
+						<div class="flex gap-2">
+							{#if round.status === 'pending'}
+								<Button size="sm" variant="outline" onclick={() => markPaid(round.roundNumber)} class="flex-1">
+									<CircleCheck class="mr-1 h-3 w-3" />
+									จ่ายแล้ว
+								</Button>
+							{:else}
+								<button type="button" onclick={() => markPending(round.roundNumber)} class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
+									↩ ย้อนกลับ (จ่าย)
+								</button>
+							{/if}
+							{#if round.payoutStatus !== 'received'}
+								<Button size="sm" onclick={() => markReceived(round.roundNumber)} class="flex-1 bg-green-600 hover:bg-green-700 text-white">
+									<CircleCheck class="mr-1 h-3 w-3" />
+									รับแล้ว
+								</Button>
+							{:else}
+								<button type="button" onclick={() => markReceivedPending(round.roundNumber)} class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
+									↩ ย้อนกลับ (รับ)
+								</button>
+							{/if}
+						</div>
+					{:else if round.status === 'pending'}
+						<Button size="sm" variant="outline" onclick={() => markPaid(round.roundNumber)} class="w-full">
 							<CircleCheck class="mr-1 h-3 w-3" />
-							{round.isMyRound ? 'รับแล้ว' : 'จ่ายแล้ว'}
+							จ่ายแล้ว
 						</Button>
 					{:else}
-						<button
-							type="button"
-							onclick={() => markPending(round.roundNumber)}
-							class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
-						>
+						<button type="button" onclick={() => markPending(round.roundNumber)} class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
 							↩ ย้อนกลับ
 						</button>
 					{/if}
@@ -253,6 +292,10 @@
 				<div class="space-y-2">
 					<Label for="edit-date">วันที่</Label>
 					<Input id="edit-date" type="date" bind:value={editDate} />
+				</div>
+				<div class="space-y-2">
+					<Label for="edit-payment-amount">ยอดจ่ายต่อมือ (บาท)</Label>
+					<Input id="edit-payment-amount" type="number" min="1" bind:value={editPaymentAmount} />
 				</div>
 				<div class="space-y-2">
 					<Label for="edit-amount">ยอดรับของมือนี้ (บาท)</Label>

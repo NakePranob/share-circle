@@ -84,7 +84,7 @@
 	}
 </script>
 
-<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) onSubmit(formData); resetForm(); }} class="space-y-6">
+<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) { onSubmit(formData); resetForm(); } }} class="space-y-6">
 	<!-- Name -->
 	<div class="space-y-2">
 		<Label for="groupName">ชื่อวง</Label>
@@ -147,7 +147,7 @@
 			<div class="space-y-2">
 				<Label>ยอดจ่ายต่อมือ (บาท)</Label>
 				{#if errors.steppedPayments}<p class="text-xs text-destructive">{errors.steppedPayments}</p>{/if}
-				<div class="grid grid-cols-5 gap-2">
+				<div class="grid grid-cols-4 gap-2">
 					{#each Array.from({ length: form.totalRounds }), i (i)}
 						<div class="space-y-1">
 							<p class="text-xs text-muted-foreground text-center">มือ {i + 1}</p>

@@ -11,9 +11,10 @@
 		paidCashFlow: Map<string, DayData>;
 		onClose: () => void;
 		onMarkAsPaid: (groupId: string, roundNumber: number) => void;
+		onMarkAsReceived: (groupId: string, roundNumber: number) => void;
 	}
 
-	let { selectedDay, open, paidCashFlow, onClose, onMarkAsPaid }: Props = $props();
+	let { selectedDay, open, paidCashFlow, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
 
 	function txnLabel(type: string) {
 		if (type === 'payment') return '💸 จ่าย';
@@ -53,7 +54,8 @@
 							t.transaction.roundNumber === transaction.roundNumber && 
 							t.transaction.type === transaction.type
 						)}
-						{@const canPay = !isPaid && (transaction.type === 'payment' || transaction.type === 'payout') && transaction.groupId && transaction.roundNumber}
+						{@const canPay = !isPaid && transaction.type === 'payment' && transaction.groupId && transaction.roundNumber}
+						{@const canReceive = !isPaid && transaction.type === 'payout' && transaction.groupId && transaction.roundNumber}
 						<div class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid ? 'bg-muted/30' : ''}">
 							<div>
 								<p class="text-sm font-medium">{txnLabel(transaction.type)}</p>
@@ -64,6 +66,9 @@
 									{/if}
 									{#if !isPaid && transaction.type === 'payment'}
 										<span class="ml-2 text-yellow-600 font-medium">• ยังไม่จ่าย</span>
+									{/if}
+									{#if !isPaid && transaction.type === 'payout'}
+										<span class="ml-2 text-blue-600 font-medium">• ยังไม่รับ</span>
 									{/if}
 								</p>
 							</div>
@@ -79,6 +84,16 @@
 										onclick={() => onMarkAsPaid(transaction.groupId!, transaction.roundNumber!)}
 									>
 										จ่าย
+									</Button>
+								{/if}
+								{#if canReceive}
+									<Button
+										size="sm"
+										variant="outline"
+										class="border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+										onclick={() => onMarkAsReceived(transaction.groupId!, transaction.roundNumber!)}
+									>
+										รับ
 									</Button>
 								{/if}
 							</div>

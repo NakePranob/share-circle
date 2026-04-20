@@ -29,6 +29,13 @@ export function iOweForRound(group: Group): number {
 	return group.rounds.filter((r) => r.isMyRound).reduce((s: number, r: Round) => s + r.paymentAmount, 0);
 }
 
+/** What we owe for a specific round number = payment amount of that round (we pay every round) */
+export function iOweForSpecificRound(group: Group, roundNumber: number): number {
+	const round = group.rounds.find((r) => r.roundNumber === roundNumber);
+	if (!round) return 0;
+	return round.paymentAmount;
+}
+
 /** What we receive for a my-round = that round's receiveAmount */
 export function iReceiveForRound(round: Round): number {
 	return round.receiveAmount;
@@ -39,9 +46,8 @@ export function totalIReceive(group: Group): number {
 }
 
 export function totalIOwe(group: Group): number {
-	const payPerRound = myTotalOwe(group);
-	const nonMyRounds = group.rounds.filter((r) => !r.isMyRound).length;
-	return payPerRound * nonMyRounds;
+	const payPerRound = iOweForRound(group);
+	return payPerRound * group.rounds.length;
 }
 
 export function paidCount(group: Group): number {

@@ -5,12 +5,13 @@ import type { DayData } from '$features/calendar/types';
 import { buildCashFlow, buildPaidCashFlow } from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 
-export function useCalendar(getGroups: () => Group[], wallet: Wallet) {
+export function useCalendar(getGroups: () => Group[], getWallet: () => Wallet) {
 	const _now = new SvelteDate();
 	let viewYear = $state(_now.getFullYear());
 	let viewMonth = $state(_now.getMonth()); // 0-indexed
 	let selectedDay = $state<DayData | null>(null);
 
+	const wallet = $derived(getWallet());
 	const cashFlow = $derived(buildCashFlow(getGroups(), wallet, viewYear, viewMonth));
 	const paidCashFlow = $derived(buildPaidCashFlow(getGroups(), wallet, viewYear, viewMonth));
 

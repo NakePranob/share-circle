@@ -10,14 +10,21 @@
 	import { TOAST_MESSAGES } from '$features/calendar/constants';
 
 	const walletActions = useWalletActions();
-	const calendar = useCalendar(() => groupsStore.groups, walletActions.wallet);
+	const calendar = useCalendar(() => groupsStore.groups, () => walletActions.wallet);
 
 	let sheetOpen = $state(false);
 
 	function markAsPaid(groupId: string, roundNumber: number) {
 		groupsStore.markRoundPaid(groupId, roundNumber);
 		toast.success(TOAST_MESSAGES.MARK_AS_PAID);
-		// Refresh the selected day data
+		if (calendar.selectedDay) {
+			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
+		}
+	}
+
+	function markAsReceived(groupId: string, roundNumber: number) {
+		groupsStore.markRoundReceived(groupId, roundNumber);
+		toast.success(TOAST_MESSAGES.MARK_AS_RECEIVED);
 		if (calendar.selectedDay) {
 			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
 		}
@@ -59,6 +66,7 @@
 	paidCashFlow={calendar.paidCashFlow}
 	onClose={() => { sheetOpen = false; setTimeout(() => { calendar.selectedDay = null; }, 300); }}
 	onMarkAsPaid={markAsPaid}
+	onMarkAsReceived={markAsReceived}
 />
 
 <WalletDialogs actions={walletActions} />

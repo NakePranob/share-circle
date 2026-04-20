@@ -10,17 +10,20 @@
 		onEditRound: (round: Round) => void;
 		onMarkPaid: (roundNumber: number) => void;
 		onMarkPending: (roundNumber: number) => void;
+		onMarkReceived: (roundNumber: number) => void;
+		onMarkReceivedPending: (roundNumber: number) => void;
 	}
 
-	let { group, owe, onEditRound, onMarkPaid, onMarkPending }: Props = $props();
+	let { group, owe, onEditRound, onMarkPaid, onMarkPending, onMarkReceived, onMarkReceivedPending }: Props = $props();
 </script>
 
 <div class="space-y-2">
 	{#each group.rounds as round (round.roundNumber)}
-		<div class="rounded-xl border bg-card p-4 {round.isMyRound ? 'border-green-200 dark:border-green-900' : 'border-border'} {round.status === 'paid' ? 'opacity-70' : ''}">
+		{@const isDone = round.isMyRound ? round.payoutStatus === 'received' && round.status === 'paid' : round.status === 'paid'}
+		<div class="rounded-xl border bg-card p-4 {round.isMyRound ? 'border-green-200 dark:border-green-900' : 'border-border'} {isDone ? 'opacity-70' : ''}">
 			<div class="mb-2 flex items-center justify-between">
 				<div class="flex items-center gap-2">
-					{#if round.status === 'paid'}
+					{#if isDone}
 						<CircleCheck class="h-4 w-4 text-green-500" />
 					{:else}
 						<Circle class="h-4 w-4 text-muted-foreground" />
@@ -58,15 +61,41 @@
 				{/if}
 			</div>
 
-			{#if round.status === 'pending'}
-				<Button
-					size="sm"
-					onclick={() => onMarkPaid(round.roundNumber)}
-					class="w-full {round.isMyRound ? 'bg-green-600 hover:bg-green-700 text-white' : ''}"
-					variant={round.isMyRound ? 'default' : 'outline'}
-				>
+			{#if round.isMyRound}
+				<div class="flex gap-2">
+					{#if round.status === 'pending'}
+						<Button size="sm" variant="outline" onclick={() => onMarkPaid(round.roundNumber)} class="flex-1">
+							<CircleCheck class="mr-1 h-3 w-3" />
+							จ่ายแล้ว
+						</Button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => onMarkPending(round.roundNumber)}
+							class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+						>
+							↩ ย้อนกลับ (จ่าย)
+						</button>
+					{/if}
+					{#if round.payoutStatus !== 'received'}
+						<Button size="sm" onclick={() => onMarkReceived(round.roundNumber)} class="flex-1 bg-green-600 hover:bg-green-700 text-white">
+							<CircleCheck class="mr-1 h-3 w-3" />
+							รับแล้ว
+						</Button>
+					{:else}
+						<button
+							type="button"
+							onclick={() => onMarkReceivedPending(round.roundNumber)}
+							class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+						>
+							↩ ย้อนกลับ (รับ)
+						</button>
+					{/if}
+				</div>
+			{:else if round.status === 'pending'}
+				<Button size="sm" variant="outline" onclick={() => onMarkPaid(round.roundNumber)} class="w-full">
 					<CircleCheck class="mr-1 h-3 w-3" />
-					{round.isMyRound ? 'รับแล้ว' : 'จ่ายแล้ว'}
+					จ่ายแล้ว
 				</Button>
 			{:else}
 				<button

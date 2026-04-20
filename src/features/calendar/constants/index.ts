@@ -7,5 +7,6 @@ export const CALENDAR_CONFIG = {
 
 // Toast messages (if needed in the future)
 export const TOAST_MESSAGES = {
-	MARK_AS_PAID: 'จ่ายเงินเรียบร้อย'
+	MARK_AS_PAID: 'จ่ายเงินเรียบร้อย',
+	MARK_AS_RECEIVED: 'รับเงินเรียบร้อย'
 } as const;
