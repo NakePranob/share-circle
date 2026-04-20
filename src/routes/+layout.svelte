@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import './layout.css';
 
-	import { House, Calendar, Users } from '@lucide/svelte';
+	import { House, Calendar, Users, History } from '@lucide/svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
 
 	let { children } = $props();
@@ -11,7 +11,8 @@
 	const navItems = [
 		{ href: '/', label: 'หน้าหลัก', icon: House },
 		{ href: '/calendar', label: 'ปฏิทิน', icon: Calendar },
-		{ href: '/groups', label: 'วง', icon: Users }
+		{ href: '/groups', label: 'วง', icon: Users },
+		{ href: '/audit-log', label: 'บันทึก', icon: History }
 	];
 
 	function isActive(href: string) {
