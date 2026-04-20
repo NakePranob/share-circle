@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { groupsStore } from '$lib/stores/groups.svelte';
 	import { walletStore } from '$lib/stores/wallet.svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 	import { buildCashFlow, buildPaidCashFlow } from '$lib/utils/cashflow';
 	import { formatCurrency } from '$lib/utils/calculator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -16,8 +17,8 @@
 	const groups = $derived(groupsStore.groups);
 	const wallet = $derived(walletStore.wallet);
 
-	let viewYear = $state(new Date().getFullYear());
-	let viewMonth = $state(new Date().getMonth()); // 0-indexed
+	let viewYear = $state(new SvelteDate().getFullYear());
+	let viewMonth = $state(new SvelteDate().getMonth()); // 0-indexed
 
 	const cashFlow = $derived(buildCashFlow(groups, wallet, viewYear, viewMonth));
 	const paidCashFlow = $derived(buildPaidCashFlow(groups, wallet, viewYear, viewMonth));
@@ -32,8 +33,8 @@
 	}
 
 	const calendarDays = $derived.by(() => {
-		const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
-		const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+		const firstDay = new SvelteDate(viewYear, viewMonth, 1).getDay(); // 0=Sun
+		const daysInMonth = new SvelteDate(viewYear, viewMonth + 1, 0).getDate();
 		const cells: Array<{ date: string; day: number } | null> = [];
 
 		for (let i = 0; i < firstDay; i++) cells.push(null);
@@ -46,11 +47,11 @@
 
 	const monthLabel = $derived(
 		new Intl.DateTimeFormat('th-TH', { month: 'long', year: 'numeric' }).format(
-			new Date(viewYear, viewMonth, 1)
+			new SvelteDate(viewYear, viewMonth, 1)
 		)
 	);
 
-	const todayStr = new Date().toISOString().split('T')[0];
+	const todayStr = new SvelteDate().toISOString().split('T')[0];
 
 	// Wallet dialogs
 	let showBalanceDialog = $state(false);
@@ -195,7 +196,7 @@
 		<!-- Day cells -->
 		<div class="grid grid-cols-7 border-t border-border">
 			{#each calendarDays as cell, i (cell?.date || i)}
-				{@const isSaturday = cell ? new Date(cell.date).getDay() === 6 : false}
+				{@const isSaturday = cell ? new SvelteDate(cell.date).getDay() === 6 : false}
 				{@const currentRow = Math.floor(i / 7)}
 				{@const lastRow = Math.floor((calendarDays.length - 1) / 7)}
 				{@const isLastRow = currentRow === lastRow}
@@ -257,7 +258,7 @@
 		<Sheet.Header>
 			<Sheet.Title>
 				{#if selectedDay}
-					{new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(selectedDay.date))}
+					{new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }).format(new SvelteDate(selectedDay.date))}
 				{/if}
 			</Sheet.Title>
 		</Sheet.Header>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { SvelteSet, SvelteDate } from 'svelte/reactivity';
 	import { groupsStore } from '$lib/stores/groups.svelte';
 	import { formatCurrency, formatDate, totalIOwe, totalIReceive, iOweForRound } from '$lib/utils/calculator';
 	import { Button } from '$lib/components/ui/button';
@@ -28,7 +29,7 @@
 	let playMode = $state<PlayMode>('fixed');
 	let frequency = $state(30); // days
 	let receiveAmountPerRound = $state(50000);
-	let startDate = $state(new Date().toISOString().split('T')[0]);
+	let startDate = $state(new SvelteDate().toISOString().split('T')[0]);
 
 	// Fixed mode settings
 	let fixedPaymentAmount = $state(1000);
@@ -37,14 +38,14 @@
 	let steppedPayments = $state<number[]>([]);
 
 	// Round selection
-	let selectedRounds = $state(new Set<number>());
+	let selectedRounds = $state(new SvelteSet<number>());
 
 	// Generate rounds based on settings
 	const rounds = $derived<RoundForm[]>((() => {
 		const result: RoundForm[] = [];
 		
 		for (let i = 0; i < totalRounds; i++) {
-			const date = new Date(startDate);
+			const date = new SvelteDate(startDate);
 			date.setDate(date.getDate() + (i * frequency));
 			const dateStr = date.toISOString().split('T')[0];
 			
@@ -220,7 +221,6 @@
 							} else {
 								selectedRounds.add(i);
 							}
-							selectedRounds = new Set(selectedRounds);
 						}}
 						class="rounded-lg border p-3 text-left transition-colors {selectedRounds.has(i) ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border hover:bg-muted/50'}"
 					>
