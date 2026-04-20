@@ -28,6 +28,7 @@
 	let playMode = $state<PlayMode>('fixed');
 	let frequency = $state(30); // days
 	let receiveAmountPerRound = $state(50000);
+	let startDate = $state(new Date().toISOString().split('T')[0]);
 
 	// Fixed mode settings
 	let fixedPaymentAmount = $state(1000);
@@ -38,14 +39,12 @@
 	// Round selection
 	let selectedRounds = $state(new Set<number>());
 
-	const today = new Date().toISOString().split('T')[0];
-
 	// Generate rounds based on settings
 	const rounds = $derived<RoundForm[]>((() => {
 		const result: RoundForm[] = [];
 		
 		for (let i = 0; i < totalRounds; i++) {
-			const date = new Date(today);
+			const date = new Date(startDate);
 			date.setDate(date.getDate() + (i * frequency));
 			const dateStr = date.toISOString().split('T')[0];
 			
@@ -137,6 +136,11 @@
 		<div class="space-y-4">
 			<p class="text-sm font-medium">การตั้งค่าวง</p>
 			
+			<div class="space-y-2">
+				<Label for="startDate">วันเริ่มต้น</Label>
+				<Input id="startDate" type="date" bind:value={startDate} />
+			</div>
+
 			<div class="grid grid-cols-2 gap-4">
 				<div class="space-y-2">
 					<Label for="totalRounds">จำนวนมือทั้งหมด</Label>

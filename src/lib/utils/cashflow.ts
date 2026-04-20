@@ -103,7 +103,16 @@ export function buildPaidCashFlow(
 		}))
 	].sort((a, b) => a.transaction.date.localeCompare(b.transaction.date));
 
+	const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+	// Carry-over: sum all transactions before this month
 	let balance = wallet.initialBalance;
+	for (const entry of allEntries) {
+		if (entry.transaction.date >= monthPrefix) break;
+		const { type, amount } = entry.transaction;
+		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
+	}
+
 	for (let d = 1; d <= daysInMonth; d++) {
 		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 		const day = dayMap.get(dateStr)!;
@@ -145,7 +154,16 @@ export function buildCashFlow(
 		}))
 	].sort((a, b) => a.transaction.date.localeCompare(b.transaction.date));
 
+	const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+	// Carry-over: sum all transactions before this month
 	let balance = wallet.initialBalance;
+	for (const entry of allEntries) {
+		if (entry.transaction.date >= monthPrefix) break;
+		const { type, amount } = entry.transaction;
+		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
+	}
+
 	for (let d = 1; d <= daysInMonth; d++) {
 		const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 		const day = dayMap.get(dateStr)!;
