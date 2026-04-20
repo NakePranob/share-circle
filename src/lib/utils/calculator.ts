@@ -3,8 +3,8 @@ export { formatCurrency, formatDate, formatDateShort } from '../../features/shar
 
 // Re-export group calculations for backward compatibility
 export {
-	myTotalOwe,
 	iOweForRound,
+	nextRoundOwe,
 	iReceiveForRound,
 	totalIReceive,
 	totalIOwe

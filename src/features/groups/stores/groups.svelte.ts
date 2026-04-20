@@ -1,7 +1,6 @@
 import { createGenericStore } from '$lib/stores/genericStore.svelte';
 import type { Group, Round } from '$features/groups/types';
 import { walletStore } from '$features/wallet/stores/wallet.svelte';
-import { iOweForRound } from '$features/groups/utils/calculators';
 
 const genericStore = createGenericStore<Group>({
 	key: 'share-circle-groups',
@@ -30,8 +29,7 @@ function markRoundPaid(groupId: string, roundNumber: number): void {
 	const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 	if (!round) return;
 
-	const owe = iOweForRound(group);
-	walletStore.addTransaction('payment', owe, `${group.name} มือ ${roundNumber}`);
+	walletStore.addTransaction('payment', round.paymentAmount, `${group.name} มือ ${roundNumber}`);
 	updateRound(groupId, roundNumber, { status: 'paid' });
 }
 

@@ -2,14 +2,11 @@ import type { Group } from '$features/groups/types';
 import type { Transaction, Wallet } from '$features/wallet/types';
 import type { DayData } from '$features/calendar/types';
 import { toISODate } from '$features/shared/utils/dateHelpers';
-import { iOweForRound } from '$features/groups/utils/calculators';
-
 function syntheticTransactions(groups: Group[]): Transaction[] {
 	const txns: Transaction[] = [];
 
 	for (const group of groups) {
 		if (!group.isActive) continue;
-		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
 			// We pay every round
@@ -19,7 +16,7 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 				roundNumber: round.roundNumber,
 				date: round.date,
 				type: 'payment',
-				amount: owe,
+				amount: round.paymentAmount,
 				isEstimate: false,
 				note: `${group.name} มือ ${round.roundNumber}`
 			});
@@ -48,7 +45,6 @@ function paidTransactions(groups: Group[]): Transaction[] {
 
 	for (const group of groups) {
 		if (!group.isActive) continue;
-		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
 			if (round.status === 'paid') {
@@ -58,7 +54,7 @@ function paidTransactions(groups: Group[]): Transaction[] {
 					roundNumber: round.roundNumber,
 					date: round.date,
 					type: 'payment',
-					amount: owe,
+					amount: round.paymentAmount,
 					isEstimate: false,
 					note: `${group.name} มือ ${round.roundNumber}`
 				});
@@ -204,7 +200,6 @@ export function getUpcomingPayments(
 
 	for (const group of groups) {
 		if (!group.isActive) continue;
-		const owe = iOweForRound(group);
 
 		for (const round of group.rounds) {
 			if (round.status === 'paid') continue;
@@ -214,7 +209,7 @@ export function getUpcomingPayments(
 				const daysUntil = Math.ceil(
 					(roundDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
 				);
-				results.push({ group, round, daysUntil, owe });
+				results.push({ group, round, daysUntil, owe: round.paymentAmount });
 			}
 		}
 	}

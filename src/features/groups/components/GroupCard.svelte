@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
 	import { Progress } from '$lib/components/ui/progress';
-	import { formatCurrency, formatDate, iOweForRound } from '$lib/utils/calculator';
+	import { formatCurrency, formatDate, nextRoundOwe } from '$lib/utils/calculator';
 	import type { Group } from '$features/groups/types';
 
 	interface Props {
@@ -23,7 +23,7 @@
 	const paid = $derived(paidCount());
 	const total = $derived(group.rounds.length);
 	const next = $derived(nextRound());
-	const owe = $derived(iOweForRound(group));
+	const owe = $derived(nextRoundOwe(group));
 </script>
 
 <button

@@ -8,7 +8,7 @@
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { groupFormSchema } from '$features/groups/schemas/groupFormSchema';
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
-	import { buildRoundsFromFormData, iOweForRound, totalIReceive, totalIOwe } from '$features/groups/utils/calculators';
+	import { buildRoundsFromFormData, nextRoundOwe, totalIReceive, totalIOwe } from '$features/groups/utils/calculators';
 	import { SvelteDate } from 'svelte/reactivity';
 	import {
 		DEFAULT_TOTAL_ROUNDS,
@@ -49,7 +49,7 @@
 	const previewGroup = $derived({ id: '', name: form.groupName, rounds, createdAt: '', isActive: true });
 
 	const myRoundNums = $derived(rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber));
-	const owePerRound = $derived(iOweForRound(previewGroup));
+	const owePerRound = $derived(nextRoundOwe(previewGroup));
 	const sumReceive = $derived(totalIReceive(previewGroup));
 	const sumOwe = $derived(totalIOwe(previewGroup));
 

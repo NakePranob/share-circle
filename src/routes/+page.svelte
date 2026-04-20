@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { walletStore } from '$features/wallet/stores/wallet.svelte';
-	import { formatCurrency, formatDate, iOweForRound } from '$lib/utils/calculator';
+	import { formatCurrency, formatDate, nextRoundOwe } from '$lib/utils/calculator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -59,7 +59,7 @@
 	const groupSummaries = $derived(
 		dashboard.activeGroups
 			.map((group) => {
-				const owe = iOweForRound(group);
+				const owe = nextRoundOwe(group);
 				const paymentMap = new Map(
 					dashboard.upcomingPayments
 						.filter((p) => p.group.id === group.id)

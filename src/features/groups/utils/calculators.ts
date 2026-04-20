@@ -19,21 +19,17 @@ export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 	return result;
 }
 
-/** Sum of payment amounts for all rounds we receive in this group */
-export function myTotalOwe(group: Group): number {
-	return group.rounds.filter((r) => r.isMyRound).reduce((s: number, r: Round) => s + r.paymentAmount, 0);
-}
-
-/** What we owe for a single round = sum of payment amounts of rounds we receive */
-export function iOweForRound(group: Group): number {
-	return group.rounds.filter((r) => r.isMyRound).reduce((s: number, r: Round) => s + r.paymentAmount, 0);
-}
-
-/** What we owe for a specific round number = payment amount of that round (we pay every round) */
-export function iOweForSpecificRound(group: Group, roundNumber: number): number {
+/** What we owe for a specific round = that round's paymentAmount (we pay every round) */
+export function iOweForRound(group: Group, roundNumber: number): number {
 	const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 	if (!round) return 0;
 	return round.paymentAmount;
+}
+
+/** Payment amount for the next unpaid round (used for display/preview) */
+export function nextRoundOwe(group: Group): number {
+	const next = group.rounds.find((r) => r.status !== 'paid');
+	return next?.paymentAmount ?? 0;
 }
 
 /** What we receive for a my-round = that round's receiveAmount */
@@ -46,8 +42,7 @@ export function totalIReceive(group: Group): number {
 }
 
 export function totalIOwe(group: Group): number {
-	const payPerRound = iOweForRound(group);
-	return payPerRound * group.rounds.length;
+	return group.rounds.reduce((s, r) => s + r.paymentAmount, 0);
 }
 
 export function paidCount(group: Group): number {

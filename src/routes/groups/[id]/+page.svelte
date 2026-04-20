@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$features/groups/stores/groups.svelte';
-	import { formatCurrency, formatDate, iOweForRound, totalIReceive, totalIOwe } from '$lib/utils/calculator';
+	import { formatCurrency, formatDate, nextRoundOwe, totalIReceive, totalIOwe } from '$lib/utils/calculator';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -24,7 +24,7 @@
 	let showDeleteDialog = $state(false);
 	let showMenu = $state(false);
 
-	const owe = $derived(group ? iOweForRound(group) : 0);
+	const owe = $derived(group ? nextRoundOwe(group) : 0);
 	const sumReceive = $derived(group ? totalIReceive(group) : 0);
 	const sumOwe = $derived(group ? totalIOwe(group) : 0);
 	const paidCount = $derived(group?.rounds.filter((r) => r.status === 'paid').length ?? 0);
