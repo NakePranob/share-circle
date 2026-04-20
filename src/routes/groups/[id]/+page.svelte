@@ -66,7 +66,7 @@
 	function toggleActive() {
 		if (!group) return;
 		groupsStore.toggleActive(group.id);
-		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+		toast.success(group.isActive ? 'เปิดวงอีกครั้ง' : 'ปิดวงแล้ว');
 		showMenu = false;
 	}
 
