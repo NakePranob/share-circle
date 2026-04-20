@@ -1,17 +1,10 @@
 import { persistedState } from './persisted.svelte';
-import type { Group, Round } from '$lib/types';
+import type { Group, Round } from '$features/shared/types';
 
 const _store = persistedState<Group[]>('share-circle-groups', []);
 
 function getAll(): Group[] {
-	// Migrate old groups to have default values for new fields
-	return _store.value.map((g) => ({
-		...g,
-		playMode: g.playMode ?? 'fixed',
-		fixedPayPerRound: g.fixedPayPerRound ?? undefined,
-		steppedPayments: g.steppedPayments ?? undefined,
-		receiveAmount: g.receiveAmount ?? g.rounds.find((r) => r.isMyRound)?.amount ?? 0
-	}));
+	return _store.value;
 }
 
 function getById(id: string): Group | undefined {

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$lib/stores/groups.svelte';
-	import { getUpcomingPayments, getUpcomingPayouts } from '$lib/utils/cashflow';
+	import { walletStore } from '$lib/stores/wallet.svelte';
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
@@ -10,13 +10,15 @@
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { CirclePlus, TrendingDown, TrendingUp, Users } from '@lucide/svelte';
 	import { toast } from 'svelte-sonner';
+	import { useDashboard } from '$features/dashboard/composables/useDashboard';
 
-	const groups = $derived(groupsStore.groups);
-	const activeGroups = $derived(groups.filter((g) => g.isActive));
-	const upcomingPayments = $derived(getUpcomingPayments(groups));
-	const upcomingPayouts = $derived(getUpcomingPayouts(groups));
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = now.getMonth();
 
-	let selectedPayment: { group: typeof groups[number]; round: typeof groups[number]['rounds'][number]; daysUntil: number; owe: number } | null = $state(null);
+	const dashboard = useDashboard(() => groupsStore.groups, walletStore.wallet, year, month);
+
+	let selectedPayment: { group: typeof dashboard.activeGroups[number]; round: typeof dashboard.activeGroups[number]['rounds'][number]; daysUntil: number; owe: number } | null = $state(null);
 
 	function thaiDateToday() {
 		return new Intl.DateTimeFormat('th-TH', {
@@ -24,7 +26,7 @@
 		}).format(new Date());
 	}
 
-	function paidCount(group: (typeof groups)[0]) {
+	function paidCount(group: (typeof dashboard.activeGroups)[0]) {
 		return group.rounds.filter((r) => r.status === 'paid').length;
 	}
 
@@ -41,7 +43,7 @@
 		<h1 class="text-2xl font-bold">สวัสดี 👋</h1>
 	</header>
 
-	{#if groups.length === 0}
+	{#if dashboard.activeGroups.length === 0}
 		<div class="flex flex-col items-center justify-center py-16 text-center">
 			<Users class="mb-4 h-16 w-16 text-muted-foreground/40" />
 			<h2 class="mb-2 text-lg font-semibold">ยังไม่มีวงแชร์</h2>
@@ -61,11 +63,11 @@
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{#if upcomingPayments.length === 0}
+				{#if dashboard.upcomingPayments.length === 0}
 					<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการจ่ายในช่วงนี้ 🎉</p>
 				{:else}
 					<div class="space-y-2">
-						{#each upcomingPayments as { group, round, daysUntil, owe }, i (i)}
+						{#each dashboard.upcomingPayments as { group, round, daysUntil, owe }, i (i)}
 							{@const isOverdue = daysUntil < 0}
 							{@const isToday = daysUntil === 0}
 							<button
@@ -96,7 +98,7 @@
 		</Card>
 
 		<!-- Upcoming payouts -->
-		{#if upcomingPayouts.length > 0}
+		{#if dashboard.upcomingPayouts.length > 0}
 			<Card>
 				<CardHeader class="pb-2">
 					<CardTitle class="flex items-center gap-2 text-base">
@@ -106,7 +108,7 @@
 				</CardHeader>
 				<CardContent>
 					<div class="space-y-2">
-						{#each upcomingPayouts as { group, round }, i (i)}
+						{#each dashboard.upcomingPayouts as { group, round }, i (i)}
 							<div class="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950/20">
 								<div>
 									<p class="text-sm font-medium">{group.name}</p>
@@ -134,11 +136,11 @@
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
-				{#if activeGroups.length === 0}
+				{#if dashboard.activeGroups.length === 0}
 					<p class="py-2 text-sm text-muted-foreground">ไม่มีวงที่กำลังดำเนิน</p>
 				{:else}
 					<div class="space-y-3">
-						{#each activeGroups as group (group.id)}
+						{#each dashboard.activeGroups as group (group.id)}
 							{@const paid = paidCount(group)}
 							{@const total = group.rounds.length}
 							{@const next = group.rounds.find((r) => r.status !== 'paid')}

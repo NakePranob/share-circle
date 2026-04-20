@@ -1,5 +1,5 @@
-import { persistedState } from './persisted.svelte';
-import type { Wallet, Transaction, TransactionType } from '$lib/types';
+import { persistedState } from '$lib/stores/persisted.svelte';
+import type { Wallet, Transaction, TransactionType } from '$features/shared/types';
 
 const _store = persistedState<Wallet>('share-circle-wallet', {
 	initialBalance: 0,
