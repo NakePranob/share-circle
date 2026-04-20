@@ -7,12 +7,13 @@
 
 	interface Props {
 		selectedDay: DayData | null;
+		open: boolean;
 		paidCashFlow: Map<string, DayData>;
 		onClose: () => void;
 		onMarkAsPaid: (groupId: string, roundNumber: number) => void;
 	}
 
-	let { selectedDay, paidCashFlow, onClose, onMarkAsPaid }: Props = $props();
+	let { selectedDay, open, paidCashFlow, onClose, onMarkAsPaid }: Props = $props();
 
 	function txnLabel(type: string) {
 		if (type === 'payment') return '💸 จ่าย';
@@ -23,7 +24,7 @@
 	}
 </script>
 
-<Sheet.Root open={selectedDay !== null} onOpenChange={(o) => !o && onClose()}>
+<Sheet.Root {open} onOpenChange={(o) => !o && onClose()}>
 	<Sheet.Content side="bottom" class="max-h-[60vh] rounded-t-2xl">
 		<Sheet.Header>
 			<Sheet.Title>
@@ -61,7 +62,7 @@
 									{#if transaction.isEstimate}
 										<span class="italic"> (ประมาณ)</span>
 									{/if}
-									{#if !isPaid && (transaction.type === 'payment' || transaction.type === 'payout')}
+									{#if !isPaid && transaction.type === 'payment'}
 										<span class="ml-2 text-yellow-600 font-medium">• ยังไม่จ่าย</span>
 									{/if}
 								</p>

@@ -19,6 +19,7 @@
 	const dashboard = useDashboard(() => groupsStore.groups, walletStore.wallet, year, month);
 
 	let selectedPayment: { group: typeof dashboard.activeGroups[number]; round: typeof dashboard.activeGroups[number]['rounds'][number]; daysUntil: number; owe: number } | null = $state(null);
+	let paymentSheetOpen = $state(false);
 
 	function thaiDateToday() {
 		return new Intl.DateTimeFormat('th-TH', {
@@ -33,7 +34,8 @@
 	function markAsPaid(groupId: string, roundNumber: number) {
 		groupsStore.markRoundPaid(groupId, roundNumber);
 		toast.success('จ่ายเงินเรียบร้อย');
-		selectedPayment = null;
+		paymentSheetOpen = false;
+		setTimeout(() => { selectedPayment = null; }, 300);
 	}
 </script>
 
@@ -71,7 +73,8 @@
 							{@const isOverdue = daysUntil < 0}
 							{@const isToday = daysUntil === 0}
 							<button
-								onclick={() => selectedPayment = { group, round, daysUntil, owe }}
+								type="button"
+								onclick={() => { selectedPayment = { group, round, daysUntil, owe }; paymentSheetOpen = true; }}
 								class="w-full flex items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 {isOverdue ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/20' : 'border-border'}"
 							>
 								<div>
@@ -171,7 +174,7 @@
 </div>
 
 <!-- Payment detail sheet -->
-<Sheet.Root open={selectedPayment !== null} onOpenChange={(o) => !o && (selectedPayment = null)}>
+<Sheet.Root open={paymentSheetOpen} onOpenChange={(o) => { if (!o) { paymentSheetOpen = false; setTimeout(() => { selectedPayment = null; }, 300); } }}>
 	<Sheet.Content side="bottom" class="max-h-[60vh] rounded-t-2xl">
 		<Sheet.Header>
 			<Sheet.Title>

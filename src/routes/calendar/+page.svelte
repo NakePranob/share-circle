@@ -12,6 +12,8 @@
 	const walletActions = useWalletActions();
 	const calendar = useCalendar(() => groupsStore.groups, walletActions.wallet);
 
+	let sheetOpen = $state(false);
+
 	function markAsPaid(groupId: string, roundNumber: number) {
 		groupsStore.markRoundPaid(groupId, roundNumber);
 		toast.success(TOAST_MESSAGES.MARK_AS_PAID);
@@ -47,14 +49,15 @@
 		todayStr={calendar.todayStr}
 		onPrevMonth={calendar.prevMonth}
 		onNextMonth={calendar.nextMonth}
-		onClickDay={calendar.clickDay}
+		onClickDay={(date) => { calendar.clickDay(date); sheetOpen = true; }}
 	/>
 </div>
 
 <DaySheet
 	selectedDay={calendar.selectedDay}
+	open={sheetOpen}
 	paidCashFlow={calendar.paidCashFlow}
-	onClose={() => (calendar.selectedDay = null)}
+	onClose={() => { sheetOpen = false; setTimeout(() => { calendar.selectedDay = null; }, 300); }}
 	onMarkAsPaid={markAsPaid}
 />
 
