@@ -162,12 +162,13 @@
 									{@const hasPayout = payout !== null}
 									{@const isOverdue = payment && payment.daysUntil < 0}
 									{@const isToday = payment && payment.daysUntil === 0}
+									{@const payAmount = payment?.round.paymentAmount ?? owe}
 									{@const netAmount = hasPayout && hasPayment
-										? payout.round.receiveAmount - owe
+										? payout.round.receiveAmount - payAmount
 										: hasPayout
 											? payout.round.receiveAmount
 											: hasPayment
-												? -owe
+												? -payAmount
 												: 0}
 									{@const isPositive = netAmount >= 0}
 									<button
