@@ -187,14 +187,14 @@
 	<div class="rounded-xl border border-border overflow-hidden">
 		<!-- Day headers -->
 		<div class="grid grid-cols-7 bg-muted/50">
-			{#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as dayName}
+			{#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as dayName (dayName)}
 				<div class="py-2 text-center text-xs font-medium text-muted-foreground">{dayName}</div>
 			{/each}
 		</div>
 
 		<!-- Day cells -->
 		<div class="grid grid-cols-7">
-			{#each calendarDays as cell}
+			{#each calendarDays as cell, i (cell?.date || i)}
 				{#if cell === null}
 					<div class="min-h-16 border-b border-r border-border bg-muted/20 last:border-r-0"></div>
 				{:else}
@@ -269,7 +269,7 @@
 				{#if selectedDay.transactions.length === 0}
 					<p class="py-4 text-center text-sm text-muted-foreground">ไม่มีรายการในวันนี้</p>
 				{:else}
-					{#each selectedDay.transactions as { transaction, groupName }}
+					{#each selectedDay.transactions as { transaction, groupName } (transaction.id)}
 						{@const isPaid = paidDayData?.transactions.some((t) => 
 							t.transaction.groupId === transaction.groupId && 
 							t.transaction.roundNumber === transaction.roundNumber && 

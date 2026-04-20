@@ -211,7 +211,7 @@
 			{#if errors.myRound}<p class="text-xs text-destructive">{errors.myRound}</p>{/if}
 
 			<div class="grid grid-cols-2 gap-2">
-				{#each rounds as round, i}
+				{#each rounds as round, i (i)}
 					<button
 						type="button"
 						onclick={() => {

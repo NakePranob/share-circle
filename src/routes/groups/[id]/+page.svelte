@@ -170,7 +170,7 @@
 		<!-- Rounds list -->
 		<h2 class="mb-3 font-semibold">รายการมือ</h2>
 		<div class="space-y-2">
-			{#each group.rounds as round}
+			{#each group.rounds as round (round.roundNumber)}
 				<div class="rounded-xl border bg-card p-4 {round.isMyRound ? 'border-green-200 dark:border-green-900' : 'border-border'} {round.status === 'paid' ? 'opacity-70' : ''}">
 					<div class="mb-2 flex items-center justify-between">
 						<div class="flex items-center gap-2">

@@ -65,7 +65,7 @@
 					<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการจ่ายในช่วงนี้ 🎉</p>
 				{:else}
 					<div class="space-y-2">
-						{#each upcomingPayments as { group, round, daysUntil, owe }}
+						{#each upcomingPayments as { group, round, daysUntil, owe }, i (i)}
 							{@const isOverdue = daysUntil < 0}
 							{@const isToday = daysUntil === 0}
 							<button
@@ -106,7 +106,7 @@
 				</CardHeader>
 				<CardContent>
 					<div class="space-y-2">
-						{#each upcomingPayouts as { group, round }}
+						{#each upcomingPayouts as { group, round }, i (i)}
 							<div class="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950/20">
 								<div>
 									<p class="text-sm font-medium">{group.name}</p>
@@ -138,7 +138,7 @@
 					<p class="py-2 text-sm text-muted-foreground">ไม่มีวงที่กำลังดำเนิน</p>
 				{:else}
 					<div class="space-y-3">
-						{#each activeGroups as group}
+						{#each activeGroups as group (group.id)}
 							{@const paid = paidCount(group)}
 							{@const total = group.rounds.length}
 							{@const next = group.rounds.find((r) => r.status !== 'paid')}

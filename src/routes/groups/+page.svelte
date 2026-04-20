@@ -48,7 +48,7 @@
 				</div>
 			{:else}
 				<div class="space-y-3">
-					{#each activeGroups as group}
+					{#each activeGroups as group (group.id)}
 						{@const paid = paidCount(group)}
 						{@const total = group.rounds.length}
 						{@const next = nextRound(group)}
@@ -92,7 +92,7 @@
 				</div>
 			{:else}
 				<div class="space-y-3">
-					{#each closedGroups as group}
+					{#each closedGroups as group (group.id)}
 						{@const paid = paidCount(group)}
 						{@const total = group.rounds.length}
 						<button
