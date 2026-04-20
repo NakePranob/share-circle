@@ -7,7 +7,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { Separator } from '$lib/components/ui/separator';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { toast } from 'svelte-sonner';
@@ -22,6 +21,15 @@
 
 	const cashFlow = $derived(buildCashFlow(groups, wallet, viewYear, viewMonth));
 	const paidCashFlow = $derived(buildPaidCashFlow(groups, wallet, viewYear, viewMonth));
+
+	function markAsPaid(groupId: string, roundNumber: number) {
+		groupsStore.markRoundPaid(groupId, roundNumber);
+		toast.success('จ่ายเงินเรียบร้อย');
+		// Refresh the selected day data
+		if (selectedDay) {
+			selectedDay = cashFlow.get(selectedDay.date) ?? null;
+		}
+	}
 
 	const calendarDays = $derived.by(() => {
 		const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0=Sun
@@ -191,11 +199,13 @@
 					<div class="min-h-16 border-b border-r border-border bg-muted/20 last:border-r-0"></div>
 				{:else}
 					{@const dayData = cashFlow.get(cell.date)}
+					{@const paidDayData = paidCashFlow.get(cell.date)}
 					{@const isToday = cell.date === todayStr}
 					{@const hasPayments = dayData?.transactions.some((t) => t.transaction.type === 'payment' || t.transaction.type === 'withdrawal') ?? false}
 					{@const hasPayouts = dayData?.transactions.some((t) => t.transaction.type === 'payout' || t.transaction.type === 'deposit') ?? false}
 					{@const hasEstimates = dayData?.transactions.some((t) => t.transaction.isEstimate) ?? false}
 					{@const isNegative = dayData?.hasNegativeBalance ?? false}
+					{@const hasUnpaid = dayData?.transactions.length !== paidDayData?.transactions.length}
 					<button
 						onclick={() => clickDay(cell.date)}
 						class="relative min-h-16 border-b border-r border-border p-1 text-left transition-colors last:border-r-0 hover:bg-muted/50 {isToday ? 'bg-primary/5' : ''}"
@@ -216,6 +226,9 @@
 								{#if hasPayouts}
 									<span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
 								{/if}
+								{#if hasUnpaid}
+									<span class="h-1.5 w-1.5 rounded-full bg-yellow-400"></span>
+								{/if}
 							</div>
 						{/if}
 					</button>
@@ -227,13 +240,14 @@
 	<div class="mt-3 flex gap-4 text-xs text-muted-foreground">
 		<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> จ่าย</div>
 		<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-400"></span> รับ</div>
+		<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-yellow-400"></span> ยังไม่จ่าย</div>
 		<div class="flex items-center gap-1"><span class="text-red-500 font-bold">สีแดง</span> = ยอดติดลบ</div>
 	</div>
 </div>
 
 <!-- Day detail sheet -->
 <Sheet.Root open={selectedDay !== null} onOpenChange={(o) => !o && (selectedDay = null)}>
-	<Sheet.Content side="bottom" class="max-h-[60vh]">
+	<Sheet.Content side="bottom" class="max-h-[60vh] rounded-t-2xl">
 		<Sheet.Header>
 			<Sheet.Title>
 				{#if selectedDay}
@@ -243,7 +257,8 @@
 		</Sheet.Header>
 
 		{#if selectedDay}
-			<div class="mt-4 space-y-2 overflow-y-auto pb-8">
+			{@const paidDayData = paidCashFlow.get(selectedDay.date)}
+			<div class="mt-4 space-y-2 overflow-y-auto pb-8 px-4">
 				<div class="mb-4 flex items-center justify-between rounded-lg bg-muted/50 p-3">
 					<span class="text-sm">ยอดคงเหลือ</span>
 					<span class="font-bold {selectedDay.hasNegativeBalance ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
@@ -255,7 +270,13 @@
 					<p class="py-4 text-center text-sm text-muted-foreground">ไม่มีรายการในวันนี้</p>
 				{:else}
 					{#each selectedDay.transactions as { transaction, groupName }}
-						<div class="flex items-center justify-between rounded-lg border border-border p-3">
+						{@const isPaid = paidDayData?.transactions.some((t) => 
+							t.transaction.groupId === transaction.groupId && 
+							t.transaction.roundNumber === transaction.roundNumber && 
+							t.transaction.type === transaction.type
+						)}
+						{@const canPay = !isPaid && (transaction.type === 'payment' || transaction.type === 'payout') && transaction.groupId && transaction.roundNumber}
+						<div class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid ? 'bg-muted/30' : ''}">
 							<div>
 								<p class="text-sm font-medium">{txnLabel(transaction.type)}</p>
 								<p class="text-xs text-muted-foreground">
@@ -263,12 +284,26 @@
 									{#if transaction.isEstimate}
 										<span class="italic"> (ประมาณ)</span>
 									{/if}
+									{#if !isPaid && (transaction.type === 'payment' || transaction.type === 'payout')}
+										<span class="ml-2 text-yellow-600 font-medium">• ยังไม่จ่าย</span>
+									{/if}
 								</p>
 							</div>
-							<p class="font-medium {transaction.type === 'payment' || transaction.type === 'withdrawal' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
-								{transaction.type === 'payment' || transaction.type === 'withdrawal' ? '-' : '+'}
-								{formatCurrency(transaction.amount)}
-							</p>
+							<div class="flex items-center gap-2">
+								<p class="font-medium {transaction.type === 'payment' || transaction.type === 'withdrawal' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
+									{transaction.type === 'payment' || transaction.type === 'withdrawal' ? '-' : '+'}
+									{formatCurrency(transaction.amount)}
+								</p>
+								{#if canPay}
+									<Button
+										size="sm"
+										variant="outline"
+										onclick={() => markAsPaid(transaction.groupId!, transaction.roundNumber!)}
+									>
+										จ่าย
+									</Button>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				{/if}

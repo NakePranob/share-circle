@@ -31,9 +31,9 @@
 	</header>
 
 	<Tabs value="active">
-		<TabsList class="w-full">
-			<TabsTrigger value="active" class="flex-1">กำลังดำเนิน ({activeGroups.length})</TabsTrigger>
-			<TabsTrigger value="closed" class="flex-1">ปิดแล้ว ({closedGroups.length})</TabsTrigger>
+		<TabsList class="w-full space-x-1">
+			<TabsTrigger value="active" class="flex-1 bg-background">กำลังดำเนิน ({activeGroups.length})</TabsTrigger>
+			<TabsTrigger value="closed" class="flex-1 bg-background">ปิดแล้ว ({closedGroups.length})</TabsTrigger>
 		</TabsList>
 
 		<TabsContent value="active" class="mt-4">

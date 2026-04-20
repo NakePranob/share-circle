@@ -7,12 +7,16 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Progress } from '$lib/components/ui/progress';
+	import * as Sheet from '$lib/components/ui/sheet';
 	import { CirclePlus, TrendingDown, TrendingUp, Users } from '@lucide/svelte';
+	import { toast } from 'svelte-sonner';
 
 	const groups = $derived(groupsStore.groups);
 	const activeGroups = $derived(groups.filter((g) => g.isActive));
 	const upcomingPayments = $derived(getUpcomingPayments(groups));
 	const upcomingPayouts = $derived(getUpcomingPayouts(groups));
+
+	let selectedPayment: { group: typeof groups[number]; round: typeof groups[number]['rounds'][number]; daysUntil: number; owe: number } | null = $state(null);
 
 	function thaiDateToday() {
 		return new Intl.DateTimeFormat('th-TH', {
@@ -22,6 +26,12 @@
 
 	function paidCount(group: (typeof groups)[0]) {
 		return group.rounds.filter((r) => r.status === 'paid').length;
+	}
+
+	function markAsPaid(groupId: string, roundNumber: number) {
+		groupsStore.markRoundPaid(groupId, roundNumber);
+		toast.success('จ่ายเงินเรียบร้อย');
+		selectedPayment = null;
 	}
 </script>
 
@@ -58,14 +68,17 @@
 						{#each upcomingPayments as { group, round, daysUntil, owe }}
 							{@const isOverdue = daysUntil < 0}
 							{@const isToday = daysUntil === 0}
-							<div class="flex items-center justify-between rounded-lg border p-3 {isOverdue ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/20' : 'border-border'}">
+							<button
+								onclick={() => selectedPayment = { group, round, daysUntil, owe }}
+								class="w-full flex items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 {isOverdue ? 'border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/20' : 'border-border'}"
+							>
 								<div>
 									<p class="text-sm font-medium">{group.name}</p>
 									<p class="text-xs text-muted-foreground">
 										มือ {round.roundNumber} · {formatDate(round.date)}
 									</p>
 								</div>
-								<div class="text-right">
+								<div class="flex flex-col items-end gap-2">
 									<p class="text-sm font-bold text-red-500">{formatCurrency(owe)}</p>
 									{#if isOverdue}
 										<Badge variant="destructive" class="text-xs">เกินกำหนด</Badge>
@@ -75,7 +88,7 @@
 										<p class="text-xs text-muted-foreground">อีก {daysUntil} วัน</p>
 									{/if}
 								</div>
-							</div>
+							</button>
 						{/each}
 					</div>
 				{/if}
@@ -154,3 +167,56 @@
 		</Card>
 	{/if}
 </div>
+
+<!-- Payment detail sheet -->
+<Sheet.Root open={selectedPayment !== null} onOpenChange={(o) => !o && (selectedPayment = null)}>
+	<Sheet.Content side="bottom" class="max-h-[60vh] rounded-t-2xl">
+		<Sheet.Header>
+			<Sheet.Title>
+				{#if selectedPayment}
+					{selectedPayment.group.name} - มือ {selectedPayment.round.roundNumber}
+				{/if}
+			</Sheet.Title>
+		</Sheet.Header>
+
+		{#if selectedPayment}
+			<div class="mt-4 space-y-4 px-4 pb-4">
+				<div class="flex items-center justify-between rounded-lg bg-muted/50 p-4">
+					<div>
+						<p class="text-sm text-muted-foreground">ยอดที่ต้องจ่าย</p>
+						<p class="text-2xl font-bold text-red-500">{formatCurrency(selectedPayment.owe)}</p>
+					</div>
+					<div class="text-right">
+						<p class="text-sm text-muted-foreground">วันที่</p>
+						<p class="font-medium">{formatDate(selectedPayment.round.date)}</p>
+					</div>
+				</div>
+
+				{#if selectedPayment.daysUntil < 0}
+					<div class="flex items-center justify-center gap-2 rounded-lg bg-red-50 p-3 dark:bg-red-950/20">
+						<Badge variant="destructive">เกินกำหนด</Badge>
+						<p class="text-sm text-red-600 dark:text-red-400">เกินกำหนด {Math.abs(selectedPayment.daysUntil)} วัน</p>
+					</div>
+				{:else if selectedPayment.daysUntil === 0}
+					<div class="flex items-center justify-center gap-2 rounded-lg bg-orange-50 p-3 dark:bg-orange-950/20">
+						<Badge class="bg-orange-500 text-white">วันนี้</Badge>
+						<p class="text-sm text-orange-600 dark:text-orange-400">ถึงกำหนดวันนี้</p>
+					</div>
+				{:else}
+					<div class="flex items-center justify-center gap-2 rounded-lg bg-muted/50 p-3">
+						<Badge variant="outline">กำหนด</Badge>
+						<p class="text-sm text-muted-foreground">อีก {selectedPayment.daysUntil} วัน</p>
+					</div>
+				{/if}
+
+				<Button
+					onclick={() => selectedPayment && markAsPaid(selectedPayment.group.id, selectedPayment.round.roundNumber)}
+					class="w-full"
+					size="lg"
+				>
+					จ่ายเงิน
+				</Button>
+			</div>
+		{/if}
+	</Sheet.Content>
+</Sheet.Root>
