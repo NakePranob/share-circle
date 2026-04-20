@@ -130,7 +130,7 @@
 	</header>
 
 	<!-- Wallet card -->
-	<Card class="mb-4">
+	<Card class="mb-4 bg-foreground text-background">
 		<CardHeader class="pb-2">
 			<CardTitle class="flex items-center gap-2 text-base">
 				<Wallet class="h-4 w-4" />
@@ -141,7 +141,7 @@
 			<p class="mb-3 text-3xl font-bold {currentBalance() < 0 ? 'text-red-500' : ''}">
 				{formatCurrency(currentBalance())}
 			</p>
-			<div class="flex gap-2">
+			<div class="flex gap-2 text-foreground">
 				<Button
 					variant="outline"
 					size="sm"
@@ -193,10 +193,14 @@
 		</div>
 
 		<!-- Day cells -->
-		<div class="grid grid-cols-7">
+		<div class="grid grid-cols-7 border-t border-border">
 			{#each calendarDays as cell, i (cell?.date || i)}
+				{@const isSaturday = cell ? new Date(cell.date).getDay() === 6 : false}
+				{@const currentRow = Math.floor(i / 7)}
+				{@const lastRow = Math.floor((calendarDays.length - 1) / 7)}
+				{@const isLastRow = currentRow === lastRow}
 				{#if cell === null}
-					<div class="min-h-16 border-b border-r border-border bg-muted/20 last:border-r-0"></div>
+					<div class="min-h-16 border-b border-border bg-muted/20 {isLastRow ? '!border-b-0' : ''}" class:border-r={!isSaturday}></div>
 				{:else}
 					{@const dayData = cashFlow.get(cell.date)}
 					{@const paidDayData = paidCashFlow.get(cell.date)}
@@ -208,7 +212,8 @@
 					{@const hasUnpaid = dayData?.transactions.length !== paidDayData?.transactions.length}
 					<button
 						onclick={() => clickDay(cell.date)}
-						class="relative min-h-16 border-b border-r border-border p-1 text-left transition-colors last:border-r-0 hover:bg-muted/50 {isToday ? 'bg-primary/5' : ''}"
+						class="relative min-h-16 border-b border-border p-1 text-left transition-colors hover:bg-muted/50 {isToday ? 'bg-primary/5' : ''} {isLastRow ? '!border-b-0' : ''}"
+						class:border-r={!isSaturday}
 					>
 						<span
 							class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium {isToday ? 'bg-primary text-primary-foreground' : ''}"
