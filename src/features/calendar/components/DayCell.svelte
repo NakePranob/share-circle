@@ -6,19 +6,32 @@
 		cell: { date: string; day: number };
 		dayData: DayData | undefined;
 		paidDayData: DayData | undefined;
+		projectedDayData: DayData | undefined;
 		isToday: boolean;
 		isLastRow: boolean;
 		isSaturday: boolean;
 		onclick: () => void;
 	}
 
-	let { cell, dayData, paidDayData, isToday, isLastRow, isSaturday, onclick }: Props = $props();
+	let { cell, dayData, paidDayData, projectedDayData, isToday, isLastRow, isSaturday, onclick }: Props = $props();
 
-	const hasPayments = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payment' || t.transaction.type === 'withdrawal') ?? false);
-	const hasPayouts = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payout' || t.transaction.type === 'deposit') ?? false);
-	const hasEstimates = $derived(dayData?.transactions.some((t) => t.transaction.isEstimate) ?? false);
-	const isNegative = $derived(dayData?.hasNegativeBalance ?? false);
-	const hasUnpaid = $derived(dayData?.transactions.length !== paidDayData?.transactions.length);
+	const isNegative = $derived(projectedDayData?.hasNegativeBalance ?? false);
+
+	const paidPaymentIds = $derived(new Set(
+		paidDayData?.transactions
+			.filter((t) => t.transaction.type === 'payment')
+			.map((t) => t.transaction.id.replace('-payment-paid', '-payment')) ?? []
+	));
+	const paidPayoutIds = $derived(new Set(
+		paidDayData?.transactions
+			.filter((t) => t.transaction.type === 'payout')
+			.map((t) => t.transaction.id.replace('-payout-paid', '-payout')) ?? []
+	));
+
+	const hasUnpaid = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payment' && !paidPaymentIds.has(t.transaction.id)) ?? false);
+	const hasUnreceived = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payout' && !paidPayoutIds.has(t.transaction.id)) ?? false);
+
+	const hasAny = $derived(hasUnpaid || hasUnreceived);
 </script>
 
 <button
@@ -31,19 +44,16 @@
 	>
 		{cell.day}
 	</span>
-	{#if dayData && dayData.transactions.length > 0}
-		<p class="mt-0.5 text-[9px] leading-tight {isNegative ? 'text-red-500 font-bold' : hasEstimates ? 'text-muted-foreground' : 'text-foreground'}">
-			{formatCurrency(dayData.balance).replace('฿', '')}
+	{#if hasAny}
+		<p class="mt-0.5 text-[9px] leading-tight {isNegative ? 'text-red-500 font-bold' : 'text-muted-foreground'}">
+			{formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '')}
 		</p>
 		<div class="mt-1 flex gap-0.5">
-			{#if hasPayments}
+			{#if hasUnpaid}
 				<span class="h-1.5 w-1.5 rounded-full bg-red-400"></span>
 			{/if}
-			{#if hasPayouts}
+			{#if hasUnreceived}
 				<span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
-			{/if}
-			{#if hasUnpaid}
-				<span class="h-1.5 w-1.5 rounded-full bg-yellow-400"></span>
 			{/if}
 		</div>
 	{/if}

@@ -9,8 +9,8 @@ export function useDashboard(getGroups: () => Group[], getWallet: () => Wallet, 
 	const cashFlow = $derived(buildCashFlow(groups, wallet, year, month));
 	const paidCashFlow = $derived(buildPaidCashFlow(groups, wallet, year, month));
 
-	const upcomingPayments = $derived(getUpcomingPayments(groups, 7));
-	const upcomingPayouts = $derived(getUpcomingPayouts(groups));
+	const upcomingPayments = $derived(getUpcomingPayments(groups, 3));
+	const upcomingPayouts = $derived(getUpcomingPayouts(groups, 3));
 
 	const activeGroups = $derived(groups.filter((g) => g.isActive));
 

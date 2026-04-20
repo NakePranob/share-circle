@@ -37,11 +37,13 @@
 
 		{#if selectedDay}
 			{@const paidDayData = paidCashFlow.get(selectedDay.date)}
+			{@const displayBalance = paidDayData?.balance ?? 0}
+			{@const isNegative = paidDayData?.hasNegativeBalance ?? false}
 			<div class="mt-4 space-y-2 overflow-y-auto pb-8 px-4">
 				<div class="mb-4 flex items-center justify-between rounded-lg bg-muted/50 p-3">
 					<span class="text-sm">ยอดคงเหลือ</span>
-					<span class="font-bold {selectedDay.hasNegativeBalance ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
-						{formatCurrency(selectedDay.balance)}
+					<span class="font-bold {isNegative ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
+						{formatCurrency(displayBalance)}
 					</span>
 				</div>
 
@@ -65,10 +67,10 @@
 										<span class="italic"> (ประมาณ)</span>
 									{/if}
 									{#if !isPaid && transaction.type === 'payment'}
-										<span class="ml-2 text-yellow-600 font-medium">• ยังไม่จ่าย</span>
+										<span class="ml-2 text-red-600 font-medium">• ยังไม่จ่าย</span>
 									{/if}
 									{#if !isPaid && transaction.type === 'payout'}
-										<span class="ml-2 text-blue-600 font-medium">• ยังไม่รับ</span>
+										<span class="ml-2 text-green-600 font-medium">• ยังไม่รับ</span>
 									{/if}
 								</p>
 							</div>

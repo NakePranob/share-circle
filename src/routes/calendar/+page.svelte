@@ -53,6 +53,7 @@
 		monthLabel={calendar.monthLabel}
 		cashFlow={calendar.cashFlow}
 		paidCashFlow={calendar.paidCashFlow}
+		projectedCashFlow={calendar.projectedCashFlow}
 		todayStr={calendar.todayStr}
 		onPrevMonth={calendar.prevMonth}
 		onNextMonth={calendar.nextMonth}

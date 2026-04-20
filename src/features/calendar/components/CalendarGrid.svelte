@@ -9,13 +9,14 @@
 		monthLabel: string;
 		cashFlow: Map<string, DayData>;
 		paidCashFlow: Map<string, DayData>;
+		projectedCashFlow: Map<string, DayData>;
 		todayStr: string;
 		onPrevMonth: () => void;
 		onNextMonth: () => void;
 		onClickDay: (date: string) => void;
 	}
 
-	let { calendarDays, monthLabel, cashFlow, paidCashFlow, todayStr, onPrevMonth, onNextMonth, onClickDay }: Props = $props();
+	let { calendarDays, monthLabel, cashFlow, paidCashFlow, projectedCashFlow, todayStr, onPrevMonth, onNextMonth, onClickDay }: Props = $props();
 </script>
 
 <div class="mb-3 flex items-center justify-between">
@@ -50,6 +51,7 @@
 					{cell}
 					dayData={cashFlow.get(cell.date)}
 					paidDayData={paidCashFlow.get(cell.date)}
+					projectedDayData={projectedCashFlow.get(cell.date)}
 					isToday={cell.date === todayStr}
 					{isLastRow}
 					{isSaturday}
@@ -61,8 +63,7 @@
 </div>
 
 <div class="mt-3 flex gap-4 text-xs text-muted-foreground">
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> จ่าย</div>
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-400"></span> รับ</div>
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-yellow-400"></span> ยังไม่จ่าย</div>
+	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> ต้องจ่าย</div>
+	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-400"></span> ต้องรับ</div>
 	<div class="flex items-center gap-1"><span class="text-red-500 font-bold">สีแดง</span> = ยอดติดลบ</div>
 </div>

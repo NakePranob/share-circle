@@ -124,7 +124,7 @@
 		</div>
 	{:else}
 		<!-- Upcoming by group -->
-		<div class="max-h-144 overflow-y-auto">
+		<div>
 			{#if groupSummaries.length === 0}
 				<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการในช่วงนี้ 🎉</p>
 			{:else}
@@ -132,7 +132,7 @@
 					{#each groupSummaries as { group, owe, rounds, hasOverdue } (group.id)}
 						{@const isCollapsed = collapsedGroups.includes(group.id)}
 						<div
-							class="rounded-lg border {hasOverdue
+							class="rounded-xl border {hasOverdue
 								? 'border-red-300 dark:border-red-900'
 								: 'border-border'} overflow-hidden"
 						>
@@ -214,7 +214,7 @@
 									</button>
 								{/each}
 								</div>
-								</div>
+							</div>
 						</div>
 					{/each}
 				</div>

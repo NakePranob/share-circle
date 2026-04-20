@@ -2,7 +2,7 @@ import { SvelteDate } from 'svelte/reactivity';
 import type { Group } from '$features/groups/types';
 import type { Wallet } from '$features/wallet/types';
 import type { DayData } from '$features/calendar/types';
-import { buildCashFlow, buildPaidCashFlow } from '$features/calendar/utils/cashflow';
+import { buildCashFlow, buildPaidCashFlow, buildProjectedCashFlow } from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 
 export function useCalendar(getGroups: () => Group[], getWallet: () => Wallet) {
@@ -14,6 +14,7 @@ export function useCalendar(getGroups: () => Group[], getWallet: () => Wallet) {
 	const wallet = $derived(getWallet());
 	const cashFlow = $derived(buildCashFlow(getGroups(), wallet, viewYear, viewMonth));
 	const paidCashFlow = $derived(buildPaidCashFlow(getGroups(), wallet, viewYear, viewMonth));
+	const projectedCashFlow = $derived(buildProjectedCashFlow(getGroups(), wallet, viewYear, viewMonth));
 
 	const calendarDays = $derived.by(() => {
 		const firstDay = new SvelteDate(viewYear, viewMonth, 1).getDay(); // 0=Sun
@@ -73,6 +74,7 @@ export function useCalendar(getGroups: () => Group[], getWallet: () => Wallet) {
 		get viewMonth() { return viewMonth; },
 		get cashFlow() { return cashFlow; },
 		get paidCashFlow() { return paidCashFlow; },
+		get projectedCashFlow() { return projectedCashFlow; },
 		get calendarDays() { return calendarDays; },
 		get monthLabel() { return monthLabel; },
 		get selectedDay() { return selectedDay; },
