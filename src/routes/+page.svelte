@@ -64,7 +64,7 @@
 					ต้องจ่าย (7 วันข้างหน้า)
 				</CardTitle>
 			</CardHeader>
-			<CardContent>
+			<CardContent class="max-h-144 overflow-y-auto">
 				{#if dashboard.upcomingPayments.length === 0}
 					<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการจ่ายในช่วงนี้ 🎉</p>
 				{:else}
@@ -109,7 +109,7 @@
 						จะได้รับเงิน
 					</CardTitle>
 				</CardHeader>
-				<CardContent>
+				<CardContent class="max-h-144 overflow-y-auto">
 					<div class="space-y-2">
 						{#each dashboard.upcomingPayouts as { group, round }, i (i)}
 							<div class="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-900 dark:bg-green-950/20">
