@@ -195,7 +195,7 @@
 						<Checkbox checked={form.selectedRounds.includes(i)} class="pointer-events-none" />
 					</div>
 					<p class="text-xs text-muted-foreground">{formatDate(round.date)}</p>
-					<p class="text-xs text-muted-foreground">จ่าย: {formatCurrency(round.paymentAmount)}</p>
+					<p class="text-xs text-muted-foreground">จ่าย: {formatCurrency(form.playMode === 'fixed' ? (form.fixedPaymentAmount ?? 0) : (form.steppedPayments[i] ?? 0))}</p>
 				</button>
 			{/each}
 		</div>

@@ -5,20 +5,21 @@ import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
 export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 	const result: Round[] = [];
 
-	// paymentAmount per round = sum of paymentAmounts for all rounds we receive
 	const basePayments =
 		data.playMode === 'fixed'
 			? Array.from({ length: data.totalRounds }, () => data.fixedPaymentAmount ?? 0)
 			: (data.steppedPayments ?? []);
 
+	// ยอดจ่ายต่อมือ = ผลรวม paymentAmount ของมือที่เราเลือกรับ
 	const myRoundsPaymentSum = data.selectedRounds.reduce((sum, i) => sum + (basePayments[i] ?? 0), 0);
+	const paymentPerRound = data.selectedRounds.length > 0 ? myRoundsPaymentSum : 0;
 
 	for (let i = 0; i < data.totalRounds; i++) {
 		const date = new SvelteDate(data.startDate);
 		date.setDate(date.getDate() + i * data.frequency);
 		result.push({
 			date: date.toISOString().split('T')[0],
-			paymentAmount: data.selectedRounds.length > 0 ? myRoundsPaymentSum : (basePayments[i] ?? 0),
+			paymentAmount: paymentPerRound > 0 ? paymentPerRound : (basePayments[i] ?? 0),
 			receiveAmount: data.receiveAmountPerRound,
 			isMyRound: data.selectedRounds.includes(i),
 			roundNumber: i + 1,
