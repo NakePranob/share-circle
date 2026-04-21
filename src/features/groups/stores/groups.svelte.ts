@@ -50,6 +50,7 @@ export const groupsStore = {
 	add,
 	update: genericStore.update,
 	remove: genericStore.remove,
+	clearAll: genericStore.clearAll,
 	updateRound,
 	markRoundPaid,
 	markRoundPending,

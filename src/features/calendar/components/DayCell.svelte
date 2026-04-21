@@ -2,6 +2,7 @@
 	import type { DayData } from '$features/calendar/types';
 	import type { Group } from '$features/groups/types';
 	import { formatCurrency } from '$lib/utils/calculator';
+	import { startOfDay } from 'date-fns';
 
 	interface Props {
 		cell: { date: string; day: number };
@@ -40,7 +41,7 @@
 	const hasAnyRounds = $derived(
 		(groups.some((group) =>
 			group.rounds.some((round) => round.date === cell.date)
-			&& new Date(cell.date) > new Date()
+			&& startOfDay(new Date(cell.date)) >= startOfDay(new Date())
 		)) ?? false
 	);
 	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);

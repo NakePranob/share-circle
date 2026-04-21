@@ -11,7 +11,8 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import { CircleCheck, Circle, ArrowLeft, EllipsisVertical, Pencil } from '@lucide/svelte';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
+	import { CircleCheck, Circle, ArrowLeft, EllipsisVertical, Pencil, Download, Copy } from '@lucide/svelte';
 	import type { Round } from '$lib/types';
 
 	const id = $derived(page.params.id ?? '');
@@ -22,7 +23,7 @@
 	let editAmount = $state(0);
 	let editPaymentAmount = $state(0);
 	let showDeleteDialog = $state(false);
-	let showMenu = $state(false);
+	let showExportDialog = $state(false);
 
 	const owe = $derived(group ? nextRoundOwe(group) : 0);
 	const sumReceive = $derived(group ? totalIReceive(group) : 0);
@@ -82,7 +83,38 @@
 		if (!group) return;
 		groupsStore.toggleActive(group.id);
 		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
-		showMenu = false;
+	}
+
+	function exportGroupData(): string {
+		if (!group) return JSON.stringify({ group: null, exportedAt: new Date().toISOString() }, null, 2);
+		const data = {
+			group: group,
+			exportedAt: new Date().toISOString()
+		};
+		return JSON.stringify(data, null, 2);
+	}
+
+	function downloadGroupJSON() {
+		if (!group) return;
+		const json = exportGroupData();
+		const blob = new Blob([json], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `share-circle-group-${group.name}-${new Date().toISOString().split('T')[0]}.json`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+		showExportDialog = false;
+	}
+
+	async function copyGroupJSON() {
+		if (!group) return;
+		const json = exportGroupData();
+		await navigator.clipboard.writeText(json);
+		showExportDialog = false;
+		toast.success('คัดลอกแล้ว');
 	}
 
 	// Preview calc for edit dialog
@@ -113,26 +145,26 @@
 				</div>
 			</div>
 
-			<div class="relative">
-				<button type="button" onclick={() => (showMenu = !showMenu)} class="rounded-full p-2 hover:bg-muted">
-					<EllipsisVertical class="h-5 w-5" />
-				</button>
-				{#if showMenu}
-					<div class="absolute right-0 top-10 z-10 min-w-40 rounded-lg border border-border bg-popover shadow-lg">
-						<button type="button" onclick={toggleActive} class="w-full px-4 py-2 text-left text-sm hover:bg-muted">
-							{group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
-						</button>
-						<Separator />
-						<button
-							type="button"
-							onclick={() => { showDeleteDialog = true; showMenu = false; }}
-							class="w-full px-4 py-2 text-left text-sm text-destructive hover:bg-muted"
-						>
-							ลบวง
-						</button>
-					</div>
-				{/if}
-			</div>
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					<button type="button" class="rounded-full p-2 hover:bg-muted">
+						<EllipsisVertical class="h-5 w-5" />
+					</button>
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content class="w-44">
+					<DropdownMenu.Item onclick={toggleActive}>
+						{group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
+					</DropdownMenu.Item>
+					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive">
+						ลบวง
+					</DropdownMenu.Item>
+					<DropdownMenu.Separator />
+					<DropdownMenu.Item onclick={() => showExportDialog = true}>
+						<Download class="mr-2 h-4 w-4" />
+						ส่งออก JSON
+					</DropdownMenu.Item>
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
 		</header>
 
 		<!-- Summary -->
@@ -340,7 +372,32 @@
 		</AlertDialog.Content>
 	</AlertDialog.Root>
 
-	{#if showMenu}
-		<button type="button" class="fixed inset-0 z-0" onclick={() => (showMenu = false)} aria-label="close menu"></button>
-	{/if}
+	<!-- Export Dialog -->
+	<Dialog.Root bind:open={showExportDialog}>
+		<Dialog.Content>
+			<Dialog.Header>
+				<Dialog.Title>ส่งออก JSON</Dialog.Title>
+				<Dialog.Description>
+					Export ข้อมูลวงแชร์ "{group?.name}"
+				</Dialog.Description>
+			</Dialog.Header>
+
+			<div class="space-y-4 py-4">
+				<Button onclick={downloadGroupJSON} class="w-full">
+					<Download class="mr-2 h-4 w-4" />
+					Download
+				</Button>
+				<Button onclick={copyGroupJSON} variant="outline" class="w-full">
+					<Copy class="mr-2 h-4 w-4" />
+					Copy to Clipboard
+				</Button>
+			</div>
+
+			<Dialog.Footer>
+				<Dialog.Close>
+					<Button variant="outline" class="w-full">ปิด</Button>
+				</Dialog.Close>
+			</Dialog.Footer>
+		</Dialog.Content>
+	</Dialog.Root>
 {/if}

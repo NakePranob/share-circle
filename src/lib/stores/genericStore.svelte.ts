@@ -33,6 +33,10 @@ export function createGenericStore<T extends { id: string }>(options: GenericSto
 		_store.value = _store.value.filter((item) => item.id !== id);
 	}
 
+	function clearAll(): void {
+		_store.value = [];
+	}
+
 	return {
 		get items() {
 			return getAll();
@@ -40,6 +44,7 @@ export function createGenericStore<T extends { id: string }>(options: GenericSto
 		getById,
 		add,
 		update,
-		remove
+		remove,
+		clearAll
 	};
 }

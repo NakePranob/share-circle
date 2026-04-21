@@ -35,11 +35,19 @@ function removeTransaction(id: string): void {
 	};
 }
 
+function clearAll(): void {
+	_store.value = {
+		initialBalance: 0,
+		manualTransactions: []
+	};
+}
+
 export const walletStore = {
 	get wallet() {
 		return _store.value;
 	},
 	setInitialBalance,
 	addTransaction,
-	removeTransaction
+	removeTransaction,
+	clearAll
 };
