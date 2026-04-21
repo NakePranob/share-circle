@@ -51,9 +51,8 @@
 	<CalendarGrid
 		calendarDays={calendar.calendarDays}
 		monthLabel={calendar.monthLabel}
-		cashFlow={calendar.cashFlow}
-		paidCashFlow={calendar.paidCashFlow}
 		projectedCashFlow={calendar.projectedCashFlow}
+		groups={groupsStore.groups}
 		todayStr={calendar.todayStr}
 		onPrevMonth={calendar.prevMonth}
 		onNextMonth={calendar.nextMonth}
@@ -65,6 +64,7 @@
 	selectedDay={calendar.selectedDay}
 	open={sheetOpen}
 	paidCashFlow={calendar.paidCashFlow}
+	groups={groupsStore.groups}
 	onClose={() => { sheetOpen = false; setTimeout(() => { calendar.selectedDay = null; }, 300); }}
 	onMarkAsPaid={markAsPaid}
 	onMarkAsReceived={markAsReceived}

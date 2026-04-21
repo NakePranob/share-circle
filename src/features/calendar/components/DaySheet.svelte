@@ -3,18 +3,28 @@
 	import { Button } from '$lib/components/ui/button';
 	import { SvelteDate } from 'svelte/reactivity';
 	import type { DayData } from '$features/calendar/types';
+	import type { Group } from '$features/groups/types';
 	import { formatCurrency } from '$lib/utils/calculator';
 
 	interface Props {
 		selectedDay: DayData | null;
 		open: boolean;
 		paidCashFlow: Map<string, DayData>;
+		groups: Group[];
 		onClose: () => void;
 		onMarkAsPaid: (groupId: string, roundNumber: number) => void;
 		onMarkAsReceived: (groupId: string, roundNumber: number) => void;
 	}
 
-	let { selectedDay, open, paidCashFlow, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
+	let { selectedDay, open, paidCashFlow, groups, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
+
+	const groupTransactions = $derived(
+		selectedDay?.transactions.filter((t) => t.transaction.groupId && t.transaction.roundNumber) ?? []
+	);
+
+	function getRound(groupId: string, roundNumber: number) {
+		return groups.find((g) => g.id === groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
+	}
 
 	function txnLabel(type: string) {
 		if (type === 'payment') return '💸 จ่าย';
@@ -47,15 +57,12 @@
 					</span>
 				</div>
 
-				{#if selectedDay.transactions.length === 0}
+				{#if groupTransactions.length === 0}
 					<p class="py-4 text-center text-sm text-muted-foreground">ไม่มีรายการในวันนี้</p>
 				{:else}
-					{#each selectedDay.transactions as { transaction, groupName } (transaction.id)}
-						{@const isPaid = paidDayData?.transactions.some((t) => 
-							t.transaction.groupId === transaction.groupId && 
-							t.transaction.roundNumber === transaction.roundNumber && 
-							t.transaction.type === transaction.type
-						)}
+					{#each groupTransactions as { transaction, groupName } (transaction.id)}
+						{@const round = transaction.groupId && transaction.roundNumber ? getRound(transaction.groupId, transaction.roundNumber) : null}
+						{@const isPaid = transaction.type === 'payment' ? round?.status === 'paid' : transaction.type === 'payout' ? round?.payoutStatus === 'received' : true}
 						{@const canPay = !isPaid && transaction.type === 'payment' && transaction.groupId && transaction.roundNumber}
 						{@const canReceive = !isPaid && transaction.type === 'payout' && transaction.groupId && transaction.roundNumber}
 						<div class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid ? 'bg-muted/30' : ''}">

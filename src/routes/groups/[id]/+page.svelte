@@ -67,7 +67,7 @@
 
 	function markReceivedPending(roundNumber: number) {
 		if (!group) return;
-		groupsStore.updateRound(group.id, roundNumber, { payoutStatus: 'pending' });
+		groupsStore.markRoundReceivedPending(group.id, roundNumber);
 		toast.success('ย้อนกลับเป็นรอแล้ว');
 	}
 
@@ -81,17 +81,12 @@
 	function toggleActive() {
 		if (!group) return;
 		groupsStore.toggleActive(group.id);
-		toast.success(group.isActive ? 'เปิดวงอีกครั้ง' : 'ปิดวงแล้ว');
+		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
 		showMenu = false;
 	}
 
 	// Preview calc for edit dialog
-	const editPreviewOwe = $derived.by(() => {
-		if (!group || !editRound) return 0;
-		if (editRound.isMyRound) return 0;
-		// Recalc owe with updated amount if this round is a my-round (it's not, so just return current owe)
-		return owe;
-	});
+	const editPreviewOwe = $derived(editRound && !editRound.isMyRound ? editPaymentAmount : 0);
 
 	const editPreviewReceive = $derived.by(() => {
 		if (!editRound?.isMyRound) return 0;
@@ -214,7 +209,7 @@
 						{#if round.isMyRound}
 							<div>
 								<p class="text-xs text-muted-foreground">เราจ่าย</p>
-								<p class="font-bold text-red-500">{formatCurrency(owe)}</p>
+								<p class="font-bold text-red-500">{formatCurrency(round.paymentAmount)}</p>
 							</div>
 							<div>
 								<p class="text-xs text-muted-foreground">เราได้รับ</p>
@@ -222,14 +217,14 @@
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-muted-foreground">สุทธิ</p>
-								<p class="font-bold {round.receiveAmount - owe >= 0 ? 'text-green-600' : 'text-red-500'}">
-									{round.receiveAmount - owe >= 0 ? '+' : ''}{formatCurrency(round.receiveAmount - owe)}
+								<p class="font-bold {round.receiveAmount - round.paymentAmount >= 0 ? 'text-green-600' : 'text-red-500'}">
+									{round.receiveAmount - round.paymentAmount >= 0 ? '+' : ''}{formatCurrency(round.receiveAmount - round.paymentAmount)}
 								</p>
 							</div>
 						{:else}
 							<div>
 								<p class="text-xs text-muted-foreground">เราจ่าย</p>
-								<p class="font-bold text-red-500">{formatCurrency(owe)}</p>
+								<p class="font-bold text-red-500">{formatCurrency(round.paymentAmount)}</p>
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-muted-foreground">ยอดรับของมือนี้</p>

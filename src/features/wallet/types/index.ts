@@ -5,6 +5,7 @@ export interface Transaction {
 	groupId: string | null;
 	roundNumber: number | null;
 	date: string;
+	actionAt?: string; // full ISO timestamp of when action was taken (for sort)
 	type: TransactionType;
 	amount: number;
 	isEstimate: boolean;

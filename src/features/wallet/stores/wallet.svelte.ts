@@ -11,11 +11,11 @@ function setInitialBalance(amount: number): void {
 	_store.value = { ..._store.value, initialBalance: amount };
 }
 
-function addTransaction(type: TransactionType, amount: number, note = ''): void {
+function addTransaction(type: TransactionType, amount: number, note = '', groupId: string | null = null, roundNumber: number | null = null): void {
 	const txn: Transaction = {
 		id: crypto.randomUUID(),
-		groupId: null,
-		roundNumber: null,
+		groupId,
+		roundNumber,
 		date: toISODate(new Date()),
 		type,
 		amount,

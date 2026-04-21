@@ -5,9 +5,9 @@
 	import { History, Wallet, Users } from '@lucide/svelte';
 
 	const auditLog = useAuditLog();
-	const manualTransactions = auditLog.manualTransactions;
-	const groupTransactions = auditLog.groupTransactions;
-	const allTransactions = auditLog.allTransactions;
+	const manualTransactions = $derived(auditLog.manualTransactions);
+	const groupTransactions = $derived(auditLog.groupTransactions);
+	const allTransactions = $derived(auditLog.allTransactions);
 </script>
 
 <div class="p-4">

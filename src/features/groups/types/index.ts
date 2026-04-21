@@ -7,7 +7,9 @@ export interface Round {
 	paymentAmount: number; // Amount to pay for this round (per round payment)
 	receiveAmount: number; // Amount received in this round
 	status: RoundStatus; // payment status
+	paidAt?: string; // ISO date when actually paid (may differ from round date)
 	payoutStatus?: PayoutStatus; // only relevant when isMyRound = true
+	receivedAt?: string; // ISO date when actually received
 	isMyRound: boolean; // True if we receive this round
 }
 

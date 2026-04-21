@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { SvelteDate } from 'svelte/reactivity';
 	import type { DayData } from '$features/calendar/types';
+	import type { Group } from '$features/groups/types';
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import DayCell from './DayCell.svelte';
 
 	interface Props {
 		calendarDays: Array<{ date: string; day: number } | null>;
 		monthLabel: string;
-		cashFlow: Map<string, DayData>;
-		paidCashFlow: Map<string, DayData>;
 		projectedCashFlow: Map<string, DayData>;
+		groups: Group[];
 		todayStr: string;
 		onPrevMonth: () => void;
 		onNextMonth: () => void;
 		onClickDay: (date: string) => void;
 	}
 
-	let { calendarDays, monthLabel, cashFlow, paidCashFlow, projectedCashFlow, todayStr, onPrevMonth, onNextMonth, onClickDay }: Props = $props();
+	let { calendarDays, monthLabel, projectedCashFlow, groups, todayStr, onPrevMonth, onNextMonth, onClickDay }: Props = $props();
 </script>
 
 <div class="mb-3 flex items-center justify-between">
@@ -49,9 +49,9 @@
 			{:else}
 				<DayCell
 					{cell}
-					dayData={cashFlow.get(cell.date)}
-					paidDayData={paidCashFlow.get(cell.date)}
+					dayData={projectedCashFlow.get(cell.date)}
 					projectedDayData={projectedCashFlow.get(cell.date)}
+					{groups}
 					isToday={cell.date === todayStr}
 					{isLastRow}
 					{isSaturday}
@@ -65,5 +65,6 @@
 <div class="mt-3 flex gap-4 text-xs text-muted-foreground">
 	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> ต้องจ่าย</div>
 	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-400"></span> ต้องรับ</div>
+	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-gray-400"></span> เสร็จแล้ว</div>
 	<div class="flex items-center gap-1"><span class="text-red-500 font-bold">สีแดง</span> = ยอดติดลบ</div>
 </div>

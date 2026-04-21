@@ -1,37 +1,49 @@
 <script lang="ts">
 	import type { DayData } from '$features/calendar/types';
+	import type { Group } from '$features/groups/types';
 	import { formatCurrency } from '$lib/utils/calculator';
 
 	interface Props {
 		cell: { date: string; day: number };
 		dayData: DayData | undefined;
-		paidDayData: DayData | undefined;
 		projectedDayData: DayData | undefined;
+		groups: Group[];
 		isToday: boolean;
 		isLastRow: boolean;
 		isSaturday: boolean;
 		onclick: () => void;
 	}
 
-	let { cell, dayData, paidDayData, projectedDayData, isToday, isLastRow, isSaturday, onclick }: Props = $props();
+	let { cell, dayData, projectedDayData, groups, isToday, isLastRow, isSaturday, onclick }: Props = $props();
 
 	const isNegative = $derived(projectedDayData?.hasNegativeBalance ?? false);
 
-	const paidPaymentIds = $derived(new Set(
-		paidDayData?.transactions
-			.filter((t) => t.transaction.type === 'payment')
-			.map((t) => t.transaction.id.replace('-payment-paid', '-payment')) ?? []
-	));
-	const paidPayoutIds = $derived(new Set(
-		paidDayData?.transactions
-			.filter((t) => t.transaction.type === 'payout')
-			.map((t) => t.transaction.id.replace('-payout-paid', '-payout')) ?? []
-	));
+	// check status จาก round โดยตรง ไม่ depend on paidAt date
+	const groupMap = $derived(new Map(groups.map((g) => [g.id, g])));
 
-	const hasUnpaid = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payment' && !paidPaymentIds.has(t.transaction.id)) ?? false);
-	const hasUnreceived = $derived(dayData?.transactions.some((t) => t.transaction.type === 'payout' && !paidPayoutIds.has(t.transaction.id)) ?? false);
+	const hasUnpaid = $derived(
+		dayData?.transactions.some((t) => {
+			if (t.transaction.type !== 'payment' || !t.transaction.groupId || !t.transaction.roundNumber) return false;
+			const round = groupMap.get(t.transaction.groupId)?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
+			return round?.status !== 'paid';
+		}) ?? false
+	);
 
-	const hasAny = $derived(hasUnpaid || hasUnreceived);
+	const hasUnreceived = $derived(
+		dayData?.transactions.some((t) => {
+			if (t.transaction.type !== 'payout' || !t.transaction.groupId || !t.transaction.roundNumber) return false;
+			const round = groupMap.get(t.transaction.groupId)?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
+			return round?.payoutStatus !== 'received';
+		}) ?? false
+	);
+
+	const hasAnyRounds = $derived(
+		(groups.some((group) =>
+			group.rounds.some((round) => round.date === cell.date)
+			&& new Date(cell.date) > new Date()
+		)) ?? false
+	);
+	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);
 </script>
 
 <button
@@ -44,9 +56,9 @@
 	>
 		{cell.day}
 	</span>
-	{#if hasAny}
+	{#if hasAnyRounds}
 		<p class="mt-0.5 text-[9px] leading-tight {isNegative ? 'text-red-500 font-bold' : 'text-muted-foreground'}">
-			{formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '')}
+			{!allDone ? formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '') : ''}
 		</p>
 		<div class="mt-1 flex gap-0.5">
 			{#if hasUnpaid}
@@ -54,6 +66,9 @@
 			{/if}
 			{#if hasUnreceived}
 				<span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
+			{/if}
+			{#if allDone}
+				<span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
 			{/if}
 		</div>
 	{/if}

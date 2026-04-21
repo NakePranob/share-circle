@@ -47,11 +47,13 @@ function paidTransactions(groups: Group[]): Transaction[] {
 
 		for (const round of group.rounds) {
 			if (round.status === 'paid') {
+				const paidAt = round.paidAt ?? round.date;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payment-paid`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
-					date: round.date,
+					date: paidAt.slice(0, 10),
+					actionAt: paidAt,
 					type: 'payment',
 					amount: round.paymentAmount,
 					isEstimate: false,
@@ -60,11 +62,13 @@ function paidTransactions(groups: Group[]): Transaction[] {
 			}
 
 			if (round.isMyRound && round.payoutStatus === 'received') {
+				const receivedAt = round.receivedAt ?? round.date;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout-paid`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
-					date: round.date,
+					date: receivedAt.slice(0, 10),
+					actionAt: receivedAt,
 					type: 'payout',
 					amount: round.receiveAmount,
 					isEstimate: false,
@@ -143,6 +147,15 @@ function buildDayMap(
 		if (entry.transaction.date >= monthPrefix) break;
 		const { type, amount } = entry.transaction;
 		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
+	}
+
+	// overdue pending transactions (date < monthPrefix) → show on day 1
+	const firstDayStr = `${monthPrefix}-01`;
+	const firstDay = dayMap.get(firstDayStr)!;
+	for (const entry of allEntries) {
+		if (entry.transaction.date >= monthPrefix) break;
+		if (!entry.transaction.isEstimate) continue; // only pending (carry-over already counted above)
+		firstDay.transactions.push(entry);
 	}
 
 	for (let d = 1; d <= daysInMonth; d++) {

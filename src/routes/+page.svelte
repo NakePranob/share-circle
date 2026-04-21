@@ -132,7 +132,7 @@
 					{#each groupSummaries as { group, owe, rounds, hasOverdue } (group.id)}
 						{@const isCollapsed = collapsedGroups.includes(group.id)}
 						<div
-							class="rounded-xl border {hasOverdue
+							class="rounded-2xl border {hasOverdue
 								? 'border-red-300 dark:border-red-900'
 								: 'border-border'} overflow-hidden"
 						>
@@ -290,11 +290,11 @@
 			{@const isPaymentDay = selectedPayment.round.status !== 'paid'}
 			{@const isPayoutDay = selectedPayment.payout && selectedPayment.payout.payoutStatus !== 'received'}
 			{@const netAmount = isPayoutDay && isPaymentDay
-				? selectedPayment.payout!.receiveAmount - selectedPayment.owe
+				? selectedPayment.payout!.receiveAmount - selectedPayment.round.paymentAmount
 				: isPayoutDay
 					? selectedPayment.payout!.receiveAmount
 					: isPaymentDay
-						? -selectedPayment.owe
+						? -selectedPayment.round.paymentAmount
 						: 0}
 			{@const isPositive = netAmount >= 0}
 			<div class="mt-4 space-y-4 px-4 pb-4">
@@ -323,7 +323,7 @@
 							<TrendingDown class="h-4 w-4 text-red-400" />
 							<p class="text-sm text-muted-foreground">จ่าย</p>
 						</div>
-						<p class="text-lg font-bold text-red-500">-{formatCurrency(selectedPayment.owe)}</p>
+						<p class="text-lg font-bold text-red-500">-{formatCurrency(selectedPayment.round.paymentAmount)}</p>
 					</div>
 				{/if}
 
