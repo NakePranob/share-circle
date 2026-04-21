@@ -5,6 +5,7 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import * as RadioGroup from '$lib/components/ui/radio-group';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { groupFormSchema } from '$features/groups/schemas/groupFormSchema';
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
@@ -37,6 +38,7 @@
 
 	let form = $state({ ...initialFormState });
 	let errors = $state<Record<string, string>>({});
+	let showConfirmDialog = $state(false);
 
 	const formData = $derived<GroupFormData>({
 		...form,
@@ -82,9 +84,15 @@
 		Object.assign(form, { ...initialFormState, startDate: new SvelteDate().toISOString().split('T')[0] });
 		errors = {};
 	}
+
+	function handleConfirmSubmit() {
+		onSubmit(formData);
+		resetForm();
+		showConfirmDialog = false;
+	}
 </script>
 
-<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) { onSubmit(formData); resetForm(); } }} class="space-y-6">
+<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) { showConfirmDialog = true; } }} class="space-y-6">
 	<!-- Name -->
 	<div class="space-y-2">
 		<Label for="groupName">ชื่อวง</Label>
@@ -222,3 +230,95 @@
 
 	<Button type="submit" class="w-full" size="lg">สร้างวง</Button>
 </form>
+
+<!-- Confirm Dialog -->
+<Dialog.Root bind:open={showConfirmDialog}>
+	<Dialog.Content class="max-h-[95vh] overflow-y-auto">
+		<Dialog.Header>
+			<Dialog.Title>ยืนยันการสร้างวง</Dialog.Title>
+			<Dialog.Description>กรุณาตรวจสอบข้อมูลก่อนยืนยัน</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="space-y-4 py-2">
+			<div class="space-y-2">
+				<p class="text-sm font-medium">ชื่อวง</p>
+				<p class="text-sm text-muted-foreground">{form.groupName}</p>
+			</div>
+
+			<div class="grid grid-cols-2 gap-4">
+				<div class="space-y-2">
+					<p class="text-sm font-medium">จำนวนมือทั้งหมด</p>
+					<p class="text-sm text-muted-foreground">{form.totalRounds} มือ</p>
+				</div>
+				<div class="space-y-2">
+					<p class="text-sm font-medium">ความถี่</p>
+					<p class="text-sm text-muted-foreground">{form.frequency} วัน</p>
+				</div>
+			</div>
+
+			<div class="space-y-2">
+				<p class="text-sm font-medium">วันเริ่มต้น</p>
+				<p class="text-sm text-muted-foreground">{formatDate(form.startDate)}</p>
+			</div>
+
+			<div class="space-y-2">
+				<p class="text-sm font-medium">รูปแบบการเล่น</p>
+				<p class="text-sm text-muted-foreground">{form.playMode === 'fixed' ? 'แบบคงที่' : 'แบบขั้นบันได'}</p>
+			</div>
+
+			<div class="space-y-2">
+				<p class="text-sm font-medium">ยอดรับต่อมือ</p>
+				<p class="text-sm text-muted-foreground">{formatCurrency(form.receiveAmountPerRound)}</p>
+			</div>
+
+			<div class="space-y-2">
+				<p class="text-sm font-medium">มือที่รับ</p>
+				<p class="text-sm text-muted-foreground">มือ {myRoundNums.map((n) => n + 1).join(', ')}</p>
+			</div>
+
+			<div class="space-y-2">
+				<p class="text-sm font-medium">ยอดจ่ายแต่ละมือ</p>
+				<div class="max-h-48 overflow-y-auto rounded-lg border border-border">
+					{#each rounds as round, i (i)}
+						<div class="flex items-center justify-between border-b border-border px-3 py-2 last:border-b-0">
+							<div class="flex items-center gap-3">
+								<span class="text-xs font-medium text-muted-foreground">มือ {i + 1}</span>
+								<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
+								{#if round.isMyRound}
+									<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">รับ</span>
+								{/if}
+							</div>
+							<span class="text-sm font-medium">{formatCurrency(round.paymentAmount)}</span>
+						</div>
+					{/each}
+				</div>
+			</div>
+
+			{#if myRoundNums.length > 0}
+				<div class="rounded-lg bg-muted p-4 space-y-2">
+					<div class="flex justify-between text-sm">
+						<span class="text-muted-foreground">เราได้รับรวม</span>
+						<span class="font-bold text-green-600">{formatCurrency(sumReceive)}</span>
+					</div>
+					<div class="flex justify-between text-sm">
+						<span class="text-muted-foreground">เราจ่ายรวม</span>
+						<span class="font-bold text-red-500">{formatCurrency(sumOwe)}</span>
+					</div>
+					<div class="flex justify-between text-sm font-medium">
+						<span>กำไร/ขาดทุน</span>
+						<span class={sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}>
+							{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
+						</span>
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<Dialog.Footer>
+			<Dialog.Close class="flex-1">
+				<Button variant="outline" class="w-full md:flex-1">ยกเลิก</Button>
+			</Dialog.Close>
+			<Button onclick={handleConfirmSubmit} class="w-full md:flex-1">ยืนยัน</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
