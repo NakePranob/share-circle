@@ -33,8 +33,7 @@
 		payout: Round | null;
 	} | null = $state(null);
 	let paymentSheetOpen = $state(false);
-	let collapsedGroups = $state<string[]>([]);
-
+	let listOpen = $state(true);
 	function thaiDateToday() {
 		return new Intl.DateTimeFormat('th-TH', {
 			weekday: 'long',
@@ -44,21 +43,13 @@
 		}).format(new Date());
 	}
 
-	function toggleGroupCollapse(groupId: string) {
-		if (collapsedGroups.includes(groupId)) {
-			collapsedGroups = collapsedGroups.filter((id) => id !== groupId);
-		} else {
-			collapsedGroups = [...collapsedGroups, groupId];
-		}
-	}
-
 	function paidCount(group: (typeof dashboard.activeGroups)[0]) {
 		return group.rounds.filter((r) => r.status === 'paid').length;
 	}
 
-	const groupSummaries = $derived(
+	const flatRounds = $derived(
 		dashboard.activeGroups
-			.map((group) => {
+			.flatMap((group) => {
 				const owe = nextRoundOwe(group);
 				const paymentMap = new Map(
 					dashboard.upcomingPayments
@@ -70,18 +61,17 @@
 						.filter((p) => p.group.id === group.id)
 						.map((p) => [p.round.roundNumber, p])
 				);
-				const roundNumbers = [...new Set([...paymentMap.keys(), ...payoutMap.keys()])].sort(
-					(a, b) => a - b
-				);
-				const rounds = roundNumbers.map((n) => ({
+				const roundNumbers = [...new Set([...paymentMap.keys(), ...payoutMap.keys()])];
+				return roundNumbers.map((n) => ({
+					group,
+					owe,
 					roundNumber: n,
 					payment: paymentMap.get(n) ?? null,
-					payout: payoutMap.get(n) ?? null
+					payout: payoutMap.get(n) ?? null,
+					date: paymentMap.get(n)?.round.date ?? payoutMap.get(n)!.round.date
 				}));
-				const hasOverdue = rounds.some((r) => r.payment && r.payment.daysUntil < 0);
-				return { group, owe, rounds, hasOverdue };
 			})
-			.filter((s) => s.rounds.length > 0)
+			.sort((a, b) => a.date.localeCompare(b.date))
 	);
 
 	function markAsPaid(groupId: string, roundNumber: number) {
@@ -107,7 +97,7 @@
 	<header class="pt-2">
 		<h5 class="flex items-center gap-2 text-xl font-bold">
 			<TrendingDown class="h-4 w-4 text-red-500" />
-			สิ่งที่ต้องทำ
+			กิจกรรม
 		</h5>
 		<p class="text-xs text-muted-foreground">{thaiDateToday()}</p>
 	</header>
@@ -123,100 +113,85 @@
 			</Button>
 		</div>
 	{:else}
-		<!-- Upcoming by group -->
+		<!-- Upcoming flat list sorted by date -->
 		<div>
-			{#if groupSummaries.length === 0}
+			{#if flatRounds.length === 0}
 				<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการในช่วงนี้ 🎉</p>
 			{:else}
-				<div class="space-y-4">
-					{#each groupSummaries as { group, owe, rounds, hasOverdue } (group.id)}
-						{@const isCollapsed = collapsedGroups.includes(group.id)}
-						<div
-							class="rounded-2xl border {hasOverdue
-								? 'border-red-300 dark:border-red-900'
-								: 'border-border'} overflow-hidden"
-						>
+				<div class="overflow-hidden rounded-2xl border border-border">
+					<button
+						type="button"
+						onclick={() => (listOpen = !listOpen)}
+						class="flex w-full items-center justify-between bg-muted/40 px-3 py-2 transition-colors hover:bg-muted/60"
+					>
+						<p class="text-sm font-semibold">รายการที่ใกล้ถึง</p>
+						{#if listOpen}
+							<ChevronUp class="h-4 w-4 text-muted-foreground" />
+						{:else}
+							<ChevronDown class="h-4 w-4 text-muted-foreground" />
+						{/if}
+					</button>
+					<div class="overflow-hidden transition-all duration-300 ease-in-out" style:max-height={listOpen ? '2000px' : '0'}>
+					<div class="divide-y divide-border">
+						{#each flatRounds as { group, owe, roundNumber, payment, payout, date } (`${group.id}-${roundNumber}`)}
+							{@const hasPayment = payment !== null}
+							{@const hasPayout = payout !== null}
+							{@const isOverdue = payment && payment.daysUntil < 0}
+							{@const isToday = payment && payment.daysUntil === 0}
+							{@const payAmount = payment?.round.paymentAmount ?? owe}
+							{@const netAmount = hasPayout && hasPayment
+								? payout.round.receiveAmount - payAmount
+								: hasPayout
+									? payout.round.receiveAmount
+									: hasPayment
+										? -payAmount
+										: 0}
+							{@const isPositive = netAmount >= 0}
 							<button
 								type="button"
-								onclick={() => toggleGroupCollapse(group.id)}
-								class="flex w-full items-center justify-between px-3 py-2 {hasOverdue
-									? 'bg-red-50 dark:bg-red-950/20'
-									: 'bg-muted/40'} transition-colors hover:bg-muted/60"
+								onclick={() => {
+									selectedPayment = {
+										group,
+										round: payment?.round ?? payout!.round,
+										daysUntil: payment?.daysUntil ?? 0,
+										owe,
+										payout: payout?.round ?? null
+									};
+									paymentSheetOpen = true;
+								}}
+								class="flex w-full items-center justify-between px-3 py-2.5 text-left transition-colors {isPositive
+									? 'bg-green-50/50 hover:bg-green-100/50 dark:bg-green-950/10 dark:hover:bg-green-950/20'
+									: 'hover:bg-muted/50'}"
 							>
 								<div class="flex items-center gap-2">
-									<p class="text-sm font-semibold">{group.name}</p>
-									{#if hasOverdue}
-										<Badge variant="destructive" class="text-xs">เกินกำหนด</Badge>
+									{#if isPositive}
+										<TrendingUp class="h-3 w-3 shrink-0 text-green-500" />
+									{:else}
+										<TrendingDown class="h-3 w-3 shrink-0 text-red-400" />
+									{/if}
+									<div>
+										<p class="text-xs font-medium">{group.name} · มือ {roundNumber}</p>
+										<p class="text-xs text-muted-foreground">{formatDate(date)}</p>
+									</div>
+								</div>
+								<div class="flex items-center gap-2">
+									<p class="text-sm font-bold {isPositive
+										? 'text-green-600 dark:text-green-400'
+										: 'text-red-500'}">
+										{isPositive ? '+' : '-'}{formatCurrency(Math.abs(netAmount))}
+									</p>
+									{#if isOverdue}
+										<Badge variant="destructive" class="text-xs">เกิน</Badge>
+									{:else if isToday}
+										<Badge class="bg-orange-500 text-xs text-white">วันนี้</Badge>
+									{:else if payment}
+										<p class="text-xs text-muted-foreground">อีก {payment.daysUntil} วัน</p>
 									{/if}
 								</div>
-								{#if isCollapsed}
-									<ChevronDown class="h-4 w-4 text-muted-foreground transition-transform duration-200" />
-								{:else}
-									<ChevronUp class="h-4 w-4 text-muted-foreground transition-transform duration-200" />
-								{/if}
 							</button>
-							<div class="overflow-hidden transition-all duration-300 ease-in-out" style:max-height="{isCollapsed ? '0' : '1000px'}">
-								<div class="divide-y divide-border">
-								{#each rounds as { roundNumber, payment, payout } (roundNumber)}
-									{@const hasPayment = payment !== null}
-									{@const hasPayout = payout !== null}
-									{@const isOverdue = payment && payment.daysUntil < 0}
-									{@const isToday = payment && payment.daysUntil === 0}
-									{@const payAmount = payment?.round.paymentAmount ?? owe}
-									{@const netAmount = hasPayout && hasPayment
-										? payout.round.receiveAmount - payAmount
-										: hasPayout
-											? payout.round.receiveAmount
-											: hasPayment
-												? -payAmount
-												: 0}
-									{@const isPositive = netAmount >= 0}
-									<button
-										type="button"
-										onclick={() => {
-											selectedPayment = {
-												group,
-												round: payment?.round ?? payout!.round,
-												daysUntil: payment?.daysUntil ?? 0,
-												owe,
-												payout: payout?.round ?? null
-											};
-											paymentSheetOpen = true;
-										}}
-										class="flex w-full items-center justify-between px-3 py-2 text-left transition-colors {isPositive
-											? 'bg-green-50/50 hover:bg-green-100/50 dark:bg-green-950/10 dark:hover:bg-green-950/20'
-											: 'hover:bg-muted/50'}"
-									>
-										<div class="flex items-center gap-2">
-											{#if isPositive}
-												<TrendingUp class="h-3 w-3 shrink-0 text-green-500" />
-											{:else}
-												<TrendingDown class="h-3 w-3 shrink-0 text-red-400" />
-											{/if}
-											<p class="text-xs font-medium">
-												มือ {roundNumber} · {formatDate(payment?.round.date ?? payout!.round.date)}
-											</p>
-										</div>
-										<div class="flex items-center gap-2">
-											<p class="text-sm font-bold {isPositive
-												? 'text-green-600 dark:text-green-400'
-												: 'text-red-500'}">
-												{isPositive ? '+' : '-'}{formatCurrency(Math.abs(netAmount))}
-											</p>
-											{#if isOverdue}
-												<Badge variant="destructive" class="text-xs">เกิน</Badge>
-											{:else if isToday}
-												<Badge class="bg-orange-500 text-xs text-white">วันนี้</Badge>
-											{:else if payment}
-												<p class="text-xs text-muted-foreground">อีก {payment.daysUntil} วัน</p>
-											{/if}
-										</div>
-									</button>
-								{/each}
-								</div>
-							</div>
-						</div>
-					{/each}
+						{/each}
+					</div>
+				</div>
 				</div>
 			{/if}
 		</div>
