@@ -40,6 +40,7 @@
 
 	const hasAnyRounds = $derived(
 		(groups.some((group) =>
+			group.isActive &&
 			group.rounds.some((round) => round.date === cell.date)
 			&& startOfDay(new Date(cell.date)) >= startOfDay(new Date())
 		)) ?? false

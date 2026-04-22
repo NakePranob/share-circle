@@ -1,6 +1,7 @@
 import type { Group } from '$features/groups/types';
 import type { Transaction, Wallet } from '$features/wallet/types';
 import type { DayData } from '$features/calendar/types';
+import { formatCurrency } from '$features/shared/utils';
 function syntheticTransactions(groups: Group[]): Transaction[] {
 	const txns: Transaction[] = [];
 
@@ -20,17 +21,18 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 				note: `${group.name} มือ ${round.roundNumber}`
 			});
 
-			// If it's our round, we also receive money
+			// If it's our round, we also receive money (net of management fee)
 			if (round.isMyRound) {
+				const fee = round.managementFee ?? 0;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
 					date: round.date,
 					type: 'payout',
-					amount: round.receiveAmount,
+					amount: round.receiveAmount - fee,
 					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
+					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}
@@ -63,6 +65,7 @@ function paidTransactions(groups: Group[]): Transaction[] {
 
 			if (round.isMyRound && round.payoutStatus === 'received') {
 				const receivedAt = round.receivedAt ?? round.date;
+				const fee = round.managementFee ?? 0;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout-paid`,
 					groupId: group.id,
@@ -70,9 +73,9 @@ function paidTransactions(groups: Group[]): Transaction[] {
 					date: receivedAt.slice(0, 10),
 					actionAt: receivedAt,
 					type: 'payout',
-					amount: round.receiveAmount,
+					amount: round.receiveAmount - fee,
 					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
+					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}
@@ -102,15 +105,16 @@ function pendingTransactions(groups: Group[]): Transaction[] {
 			}
 
 			if (round.isMyRound && round.payoutStatus !== 'received') {
+				const fee = round.managementFee ?? 0;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
 					date: round.date,
 					type: 'payout',
-					amount: round.receiveAmount,
+					amount: round.receiveAmount - fee,
 					isEstimate: true,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน`
+					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}

@@ -14,14 +14,18 @@ export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 	const myRoundsPaymentSum = data.selectedRounds.reduce((sum, i) => sum + (basePayments[i] ?? 0), 0);
 	const paymentPerRound = data.selectedRounds.length > 0 ? myRoundsPaymentSum : 0;
 
+	const fee = data.managementFee ?? 0;
+
 	for (let i = 0; i < data.totalRounds; i++) {
 		const date = new SvelteDate(data.startDate);
 		date.setDate(date.getDate() + i * data.frequency);
+		const isMyRound = data.selectedRounds.includes(i);
 		result.push({
 			date: date.toISOString().split('T')[0],
 			paymentAmount: paymentPerRound > 0 ? paymentPerRound : (basePayments[i] ?? 0),
 			receiveAmount: data.receiveAmountPerRound,
-			isMyRound: data.selectedRounds.includes(i),
+			isMyRound,
+			managementFee: isMyRound && fee > 0 ? fee : undefined,
 			roundNumber: i + 1,
 			status: 'pending'
 		});
@@ -49,6 +53,10 @@ export function iReceiveForRound(round: Round): number {
 
 export function totalIReceive(group: Group): number {
 	return group.rounds.filter((r) => r.isMyRound).reduce((s: number, r: Round) => s + r.receiveAmount, 0);
+}
+
+export function totalManagementFee(group: Group): number {
+	return group.rounds.filter((r) => r.isMyRound).reduce((s, r) => s + (r.managementFee ?? 0), 0);
 }
 
 export function totalIOwe(group: Group): number {

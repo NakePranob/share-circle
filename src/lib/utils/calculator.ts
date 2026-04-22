@@ -7,5 +7,6 @@ export {
 	nextRoundOwe,
 	iReceiveForRound,
 	totalIReceive,
-	totalIOwe
+	totalIOwe,
+	totalManagementFee
 } from '../../features/groups/utils/calculators';

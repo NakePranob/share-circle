@@ -65,6 +65,7 @@
 						{@const isPaid = transaction.type === 'payment' ? round?.status === 'paid' : transaction.type === 'payout' ? round?.payoutStatus === 'received' : true}
 						{@const canPay = !isPaid && transaction.type === 'payment' && transaction.groupId && transaction.roundNumber}
 						{@const canReceive = !isPaid && transaction.type === 'payout' && transaction.groupId && transaction.roundNumber}
+						{@const displayAmount = transaction.type === 'payout' && round?.receiveAmount ? round.receiveAmount : transaction.amount}
 						<div class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid ? 'bg-muted/30' : ''}">
 							<div>
 								<p class="text-sm font-medium">{txnLabel(transaction.type)}</p>
@@ -84,12 +85,16 @@
 							<div class="flex items-center gap-2">
 								<p class="font-medium {transaction.type === 'payment' || transaction.type === 'withdrawal' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
 									{transaction.type === 'payment' || transaction.type === 'withdrawal' ? '-' : '+'}
-									{formatCurrency(transaction.amount)}
+									{formatCurrency(displayAmount)}
 								</p>
+								{#if transaction.type === 'payout' && round?.managementFee}
+									<p class="text-medium text-orange-500">-{formatCurrency(round.managementFee)}</p>
+								{/if}
 								{#if canPay}
 									<Button
 										size="sm"
 										variant="outline"
+										class="w-16"
 										onclick={() => onMarkAsPaid(transaction.groupId!, transaction.roundNumber!)}
 									>
 										จ่าย
@@ -99,7 +104,7 @@
 									<Button
 										size="sm"
 										variant="outline"
-										class="border-green-500 text-green-600 hover:bg-green-50 dark:hover:bg-green-950/20"
+										class="w-16 text-green-600"
 										onclick={() => onMarkAsReceived(transaction.groupId!, transaction.roundNumber!)}
 									>
 										รับ

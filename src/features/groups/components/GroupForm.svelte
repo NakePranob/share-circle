@@ -9,7 +9,7 @@
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { groupFormSchema } from '$features/groups/schemas/groupFormSchema';
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
-	import { buildRoundsFromFormData, nextRoundOwe, totalIReceive, totalIOwe } from '$features/groups/utils/calculators';
+	import { buildRoundsFromFormData, nextRoundOwe, totalIReceive, totalIOwe, totalManagementFee } from '$features/groups/utils/calculators';
 	import { SvelteDate } from 'svelte/reactivity';
 	import {
 		DEFAULT_TOTAL_ROUNDS,
@@ -33,7 +33,8 @@
 		startDate: new SvelteDate().toISOString().split('T')[0],
 		fixedPaymentAmount: DEFAULT_FIXED_PAYMENT_AMOUNT,
 		steppedPayments: [] as number[],
-		selectedRounds: [] as number[]
+		selectedRounds: [] as number[],
+		managementFee: 0
 	};
 
 	let form = $state({ ...initialFormState });
@@ -43,7 +44,8 @@
 	const formData = $derived<GroupFormData>({
 		...form,
 		fixedPaymentAmount: form.playMode === 'fixed' ? form.fixedPaymentAmount : undefined,
-		steppedPayments: form.playMode === 'stepped' ? form.steppedPayments : undefined
+		steppedPayments: form.playMode === 'stepped' ? form.steppedPayments : undefined,
+		managementFee: form.managementFee > 0 ? form.managementFee : undefined
 	});
 
 	const rounds = $derived(buildRoundsFromFormData(formData));
@@ -54,6 +56,8 @@
 	const owePerRound = $derived(nextRoundOwe(previewGroup));
 	const sumReceive = $derived(totalIReceive(previewGroup));
 	const sumOwe = $derived(totalIOwe(previewGroup));
+	const sumFee = $derived(totalManagementFee(previewGroup));
+	const netProfit = $derived(sumReceive - sumOwe - sumFee);
 
 	function validate(): boolean {
 		const result = groupFormSchema.safeParse(formData);
@@ -125,10 +129,17 @@
 			</div>
 		</div>
 
-		<div class="space-y-2">
-			<Label for="receiveAmountPerRound">ยอดรับต่อมือ (บาท)</Label>
-			<Input id="receiveAmountPerRound" type="number" min="1" bind:value={form.receiveAmountPerRound} />
-			{#if errors.receiveAmountPerRound}<p class="text-xs text-destructive">{errors.receiveAmountPerRound}</p>{/if}
+		<div class="grid grid-cols-2 gap-4">
+			<div class="space-y-2">
+				<Label for="receiveAmountPerRound">ยอดรับต่อมือ (บาท)</Label>
+				<Input id="receiveAmountPerRound" type="number" min="1" bind:value={form.receiveAmountPerRound} />
+				{#if errors.receiveAmountPerRound}<p class="text-xs text-destructive">{errors.receiveAmountPerRound}</p>{/if}
+			</div>
+			<div class="space-y-2">
+				<Label for="managementFee">ค่าดูแลวง/มือ (บาท)</Label>
+				<Input id="managementFee" type="number" min="0" bind:value={form.managementFee} />
+				{#if errors.managementFee}<p class="text-xs text-destructive">{errors.managementFee}</p>{/if}
+			</div>
 		</div>
 
 		<div class="space-y-2">
@@ -219,10 +230,17 @@
 				</div>
 			</div>
 
+			{#if sumFee > 0}
+				<div class="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
+					<span class="text-muted-foreground">ค่าดูแลวงรวม</span>
+					<span class="font-medium text-orange-500">-{formatCurrency(sumFee)}</span>
+				</div>
+			{/if}
+
 			<div class="flex items-center justify-between rounded-lg bg-background px-3 py-2 text-sm">
-				<span class="text-muted-foreground">กำไร/ขาดทุน</span>
-				<span class="font-bold {sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}">
-					{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
+				<span class="text-muted-foreground">กำไร/ขาดทุน (สุทธิ)</span>
+				<span class="font-bold {netProfit >= 0 ? 'text-green-600' : 'text-red-500'}">
+					{netProfit >= 0 ? '+' : ''}{formatCurrency(netProfit)}
 				</span>
 			</div>
 		</div>
@@ -304,10 +322,16 @@
 						<span class="text-muted-foreground">เราจ่ายรวม</span>
 						<span class="font-bold text-red-500">{formatCurrency(sumOwe)}</span>
 					</div>
+					{#if sumFee > 0}
+						<div class="flex justify-between text-sm">
+							<span class="text-muted-foreground">ค่าดูแลวงรวม</span>
+							<span class="font-medium text-orange-500">-{formatCurrency(sumFee)}</span>
+						</div>
+					{/if}
 					<div class="flex justify-between text-sm font-medium">
-						<span>กำไร/ขาดทุน</span>
-						<span class={sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}>
-							{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
+						<span>กำไร/ขาดทุน (สุทธิ)</span>
+						<span class={netProfit >= 0 ? 'text-green-600' : 'text-red-500'}>
+							{netProfit >= 0 ? '+' : ''}{formatCurrency(netProfit)}
 						</span>
 					</div>
 				</div>

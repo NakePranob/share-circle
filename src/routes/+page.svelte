@@ -139,10 +139,11 @@
 							{@const isOverdue = payment && payment.daysUntil < 0}
 							{@const isToday = payment && payment.daysUntil === 0}
 							{@const payAmount = payment?.round.paymentAmount ?? owe}
+							{@const fee = payout?.round.managementFee ?? 0}
 							{@const netAmount = hasPayout && hasPayment
-								? payout.round.receiveAmount - payAmount
+								? payout.round.receiveAmount - fee - payAmount
 								: hasPayout
-									? payout.round.receiveAmount
+									? payout.round.receiveAmount - fee
 									: hasPayment
 										? -payAmount
 										: 0}
@@ -264,10 +265,11 @@
 		{#if selectedPayment}
 			{@const isPaymentDay = selectedPayment.round.status !== 'paid'}
 			{@const isPayoutDay = selectedPayment.payout && selectedPayment.payout.payoutStatus !== 'received'}
+			{@const fee = selectedPayment.payout?.managementFee ?? 0}
 			{@const netAmount = isPayoutDay && isPaymentDay
-				? selectedPayment.payout!.receiveAmount - selectedPayment.round.paymentAmount
+				? selectedPayment.payout!.receiveAmount - fee - selectedPayment.round.paymentAmount
 				: isPayoutDay
-					? selectedPayment.payout!.receiveAmount
+					? selectedPayment.payout!.receiveAmount - fee
 					: isPaymentDay
 						? -selectedPayment.round.paymentAmount
 						: 0}
@@ -312,6 +314,12 @@
 							+{formatCurrency(selectedPayment.payout!.receiveAmount)}
 						</p>
 					</div>
+					{#if selectedPayment.payout!.managementFee}
+						<div class="flex items-center justify-between rounded-lg bg-orange-50 dark:bg-orange-950/20 p-3">
+							<p class="text-sm text-muted-foreground">ค่าดูแลวง</p>
+							<p class="text-sm font-bold text-orange-500">-{formatCurrency(selectedPayment.payout!.managementFee)}</p>
+						</div>
+					{/if}
 				{/if}
 
 				{#if selectedPayment.daysUntil < 0}

@@ -11,6 +11,7 @@ export interface Round {
 	payoutStatus?: PayoutStatus; // only relevant when isMyRound = true
 	receivedAt?: string; // ISO date when actually received
 	isMyRound: boolean; // True if we receive this round
+	managementFee?: number; // Fee deducted when receiving (only relevant for isMyRound)
 }
 
 export interface Group {
@@ -19,4 +20,5 @@ export interface Group {
 	rounds: Round[];
 	createdAt: string;
 	isActive: boolean;
+	managementFeePerRound?: number;
 }
