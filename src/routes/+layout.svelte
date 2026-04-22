@@ -21,7 +21,7 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-2xl flex-col bg-background">
+<div class="mx-auto flex min-h-screen max-w-2xl flex-col bg-zinc-50">
 	<main class="flex-1 pb-20">
 		{@render children()}
 	</main>

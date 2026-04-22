@@ -29,3 +29,12 @@ export function formatMonthYear(year: number, month: number): string {
 	const date = new Date(year, month, 1);
 	return format(date, 'MMMM yyyy', { locale: th });
 }
+
+export function thaiDateToday(): string {
+	return new Intl.DateTimeFormat('th-TH', {
+		weekday: 'long',
+		day: 'numeric',
+		month: 'long',
+		year: 'numeric'
+	}).format(new Date());
+}

@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import type { useWalletActions } from '$features/wallet/composables/useWalletActions.svelte';
+	import type { useWalletActions } from '$features/wallet/composables';
 
 	interface Props {
 		actions: ReturnType<typeof useWalletActions>;

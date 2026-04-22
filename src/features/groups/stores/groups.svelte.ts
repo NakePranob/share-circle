@@ -42,6 +42,14 @@ function toggleActive(id: string): void {
 	genericStore.update(id, (g) => ({ ...g, isActive: !g.isActive }));
 }
 
+function toggleMyRound(groupId: string, roundNumber: number): void {
+	updateRound(groupId, roundNumber, { isMyRound: true, payoutStatus: 'pending' });
+}
+
+function removeMyRound(groupId: string, roundNumber: number): void {
+	updateRound(groupId, roundNumber, { isMyRound: false, payoutStatus: undefined, receivedAt: undefined });
+}
+
 export const groupsStore = {
 	get groups() {
 		return genericStore.items;
@@ -56,5 +64,7 @@ export const groupsStore = {
 	markRoundPending,
 	markRoundReceived,
 	markRoundReceivedPending,
-	toggleActive
+	toggleActive,
+	toggleMyRound,
+	removeMyRound
 };

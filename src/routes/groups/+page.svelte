@@ -2,8 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$features/groups/stores/groups.svelte';
 	import { walletStore } from '$features/wallet/stores/wallet.svelte';
-	import type { TransactionType } from '$features/wallet/types';
-	import type { Round } from '$features/groups/types';
+	import { useDataExport, useDataImport } from '$features/shared/composables';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -17,17 +16,13 @@
 	const activeGroups = $derived(groups.filter((g) => g.isActive));
 	const closedGroups = $derived(groups.filter((g) => !g.isActive));
 
+	const dataExport = useDataExport();
+	const dataImport = useDataImport();
+
 	let showDeleteDialog = $state(false);
 	let deleteConfirmText = $state('');
 	let showExportDialog = $state(false);
 	let showImportDialog = $state(false);
-	let importJSONText = $state('');
-	let showDuplicateDialog = $state(false);
-	let duplicateNames = $state<string[]>([]);
-	let groupsToImport = $state<Omit<{ id: string; name: string; rounds: Round[]; createdAt: string; isActive: boolean }, 'id' | 'createdAt'>[]>([]);
-	let importDataTemp = $state('');
-	let renamedGroups = $state<Record<number, string>>({});
-	let groupsToRemove = $state(new Set<number>());
 
 	function handleDeleteAll() {
 		groupsStore.clearAll();
@@ -36,102 +31,27 @@
 		deleteConfirmText = '';
 	}
 
-	function exportData() {
-		const data = {
-			groups: groupsStore.groups,
-			wallet: walletStore.wallet,
-			exportedAt: new Date().toISOString()
-		};
-		return JSON.stringify(data, null, 2);
-	}
-
 	function downloadJSON() {
-		const json = exportData();
-		const blob = new Blob([json], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = `share-circle-backup-${new Date().toISOString().split('T')[0]}.json`;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
+		dataExport.downloadJSON();
 		showExportDialog = false;
 	}
 
 	async function copyJSON() {
-		const json = exportData();
-		await navigator.clipboard.writeText(json);
+		await dataExport.copyJSON();
 		showExportDialog = false;
 	}
 
-	async function importData(json: string) {
-		try {
-			const data = JSON.parse(json);
-			if (!data.groups && !data.group) {
-				throw new Error('Invalid data format');
-			}
-			const tempGroups = data.groups || (data.group ? [data.group] : []);
-
-			// Check for duplicate group names
-			const existingGroupNames = new Set(groupsStore.groups.map((g: { name: string }) => g.name));
-			const tempDuplicateNames = tempGroups.filter((g: { name: string }) => existingGroupNames.has(g.name)).map((g: { name: string }) => g.name);
-
-			if (tempDuplicateNames.length > 0) {
-				duplicateNames = tempDuplicateNames;
-				groupsToImport = tempGroups;
-				importDataTemp = json;
-				renamedGroups = {};
-				groupsToRemove.clear();
-				showDuplicateDialog = true;
-				return;
-			}
-
-			tempGroups.forEach((group: Omit<{ id: string; name: string; rounds: Round[]; createdAt: string; isActive: boolean }, 'id' | 'createdAt'>) => groupsStore.add(group));
-			if (data.wallet && data.wallet.manualTransactions) {
-				data.wallet.manualTransactions.forEach((txn: { type: string; amount: number; note: string; groupId: string | null; roundNumber: number | null }) => walletStore.addTransaction(txn.type as TransactionType, txn.amount, txn.note, txn.groupId, txn.roundNumber));
-			}
-			showImportDialog = false;
-			importJSONText = '';
-		} catch {
-			alert('Invalid JSON format');
-		}
-	}
-
 	async function handleFileUpload(event: Event) {
-		const target = event.target as HTMLInputElement;
-		const file = target.files?.[0];
-		if (file) {
-			const text = await file.text();
-			await importData(text);
-		}
+		await dataImport.handleFileUpload(event);
 	}
 
 	async function handleImportFromPaste() {
-		await importData(importJSONText);
+		await dataImport.handleImportFromPaste();
 	}
 
 	function handleImportWithRenamedGroups() {
-		groupsToImport.forEach((group, index) => {
-			if (groupsToRemove.has(index)) return;
-			const newName = renamedGroups[index];
-			if (newName) {
-				group.name = newName;
-			}
-			groupsStore.add(group);
-		});
-		const data = JSON.parse(importDataTemp);
-		if (data.wallet && data.wallet.manualTransactions) {
-			data.wallet.manualTransactions.forEach((txn: { type: string; amount: number; note: string; groupId: string | null; roundNumber: number | null }) => walletStore.addTransaction(txn.type as TransactionType, txn.amount, txn.note, txn.groupId, txn.roundNumber));
-		}
-		showDuplicateDialog = false;
+		dataImport.handleImportWithRenamedGroups();
 		showImportDialog = false;
-		importJSONText = '';
-		importDataTemp = '';
-		duplicateNames = [];
-		groupsToImport = [];
-		renamedGroups = {};
-		groupsToRemove.clear();
 	}
 </script>
 
@@ -156,7 +76,7 @@
 					</DropdownMenu.Item>
 					<DropdownMenu.Item onclick={() => showImportDialog = true}>
 						<Upload class="mr-2 h-4 w-4" />
-						ส่งออก JSON
+						นำเข้า JSON
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
 					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive">
@@ -288,7 +208,7 @@
 <Dialog.Root bind:open={showImportDialog}>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>ส่งออก JSON</Dialog.Title>
+			<Dialog.Title>นำเข้า JSON</Dialog.Title>
 			<Dialog.Description>
 				Import ข้อมูลวงแชร์และบันทึกการเงินจากไฟล์ JSON
 			</Dialog.Description>
@@ -313,13 +233,13 @@
 				<Label for="pasteJSON">Paste JSON</Label>
 				<Input
 					id="pasteJSON"
-					bind:value={importJSONText}
+					bind:value={dataImport.importJSONText}
 					placeholder="Paste JSON here..."
 					class="font-mono text-xs"
 				/>
 			</div>
 
-			<Button onclick={handleImportFromPaste} class="w-full" disabled={!importJSONText}>
+			<Button onclick={handleImportFromPaste} class="w-full" disabled={!dataImport.importJSONText}>
 				Import from Paste
 			</Button>
 		</div>
@@ -333,40 +253,40 @@
 </Dialog.Root>
 
 <!-- Duplicate Group Names Dialog -->
-<Dialog.Root bind:open={showDuplicateDialog}>
+<Dialog.Root bind:open={dataImport.showDuplicateDialog}>
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>ชื่อวงซ้ำ</Dialog.Title>
 			<Dialog.Description>
-				พบชื่อวงซ้ำ: {duplicateNames.join(', ')} กรุณาเปลี่ยนชื่อหรือยกเลิก
+				พบชื่อวงซ้ำ: {dataImport.duplicateNames.join(', ')} กรุณาเปลี่ยนชื่อหรือยกเลิก
 			</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="space-y-4 py-4">
-			{#each groupsToImport as group, index (index)}
-				{#if duplicateNames.includes(group.name)}
+			{#each dataImport.groupsToImport as group, index (index)}
+				{#if dataImport.duplicateNames.includes(group.name)}
 					<div class="flex items-center gap-2">
 						<div class="flex-1 space-y-2">
 							<Label for={`rename-${index}`}>เปลี่ยนชื่อ "{group.name}" เป็น</Label>
 							<Input
 								id={`rename-${index}`}
-								bind:value={renamedGroups[index]}
+								bind:value={dataImport.renamedGroups[index]}
 								placeholder="ชื่อวงใหม่"
 							/>
 						</div>
 						<Button
 							variant="outline"
 							size="sm"
-							class="mt-6 {groupsToRemove.has(index) ? 'bg-destructive text-destructive-foreground' : ''}"
+							class="mt-6 {dataImport.groupsToRemove.has(index) ? 'bg-destructive text-destructive-foreground' : ''}"
 							onclick={() => {
-								if (groupsToRemove.has(index)) {
-									groupsToRemove.delete(index);
+								if (dataImport.groupsToRemove.has(index)) {
+									dataImport.groupsToRemove.delete(index);
 								} else {
-									groupsToRemove.add(index);
+									dataImport.groupsToRemove.add(index);
 								}
 							}}
 						>
-							{groupsToRemove.has(index) ? 'เลิกลบ' : 'ลบ'}
+							{dataImport.groupsToRemove.has(index) ? 'เลิกลบ' : 'ลบ'}
 						</Button>
 					</div>
 				{/if}

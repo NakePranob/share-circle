@@ -45,7 +45,7 @@ export default defineConfig(
 		rules: {
 			'@typescript-eslint/no-unused-vars': 'warn',
 			'svelte/no-at-html-tags': 'warn',
-			'svelte/button-has-type': 'warn',
+			'svelte/button-has-type': 'off',
 			'svelte/valid-each-key': 'warn',
 			'svelte/valid-compile': 'warn',
 			'svelte/no-navigation-without-resolve': 'off'

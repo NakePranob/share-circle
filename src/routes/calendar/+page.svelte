@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { groupsStore } from '$features/groups/stores/groups.svelte';
-	import { useCalendar } from '$features/calendar/composables/useCalendar.svelte';
-	import { useWalletActions } from '$features/wallet/composables/useWalletActions.svelte';
+	import { useCalendar } from '$features/calendar/composables';
+	import { useWalletActions } from '$features/wallet/composables';
 	import WalletCard from '$features/calendar/components/WalletCard.svelte';
 	import CalendarGrid from '$features/calendar/components/CalendarGrid.svelte';
 	import DaySheet from '$features/calendar/components/DaySheet.svelte';
@@ -10,7 +10,7 @@
 	import { TOAST_MESSAGES } from '$features/calendar/constants';
 
 	const walletActions = useWalletActions();
-	const calendar = useCalendar(() => groupsStore.groups, () => walletActions.wallet);
+	const calendar = useCalendar();
 
 	let sheetOpen = $state(false);
 

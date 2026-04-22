@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useAuditLog } from '$features/audit/composables/useAuditLog';
+	import { useAuditLog } from '$features/audit/composables';
 	import TransactionTable from '$features/audit/components/TransactionTable.svelte';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { History, Wallet, Users } from '@lucide/svelte';

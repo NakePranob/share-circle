@@ -1,20 +1,25 @@
 import { SvelteDate } from 'svelte/reactivity';
-import type { Group } from '$features/groups/types';
-import type { Wallet } from '$features/wallet/types';
 import type { DayData } from '$features/calendar/types';
 import { buildCashFlow, buildPaidCashFlow, buildProjectedCashFlow } from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
+import { groupsStore } from '$features/groups/stores/groups.svelte';
+import { walletStore } from '$features/wallet/stores/wallet.svelte';
 
-export function useCalendar(getGroups: () => Group[], getWallet: () => Wallet) {
+/**
+ * Composable สำหรับจัดการ calendar logic
+ * รับ stores โดยตรง ไม่ใช้ callback เพื่อลด boilerplate
+ */
+export function useCalendar() {
 	const _now = new SvelteDate();
 	let viewYear = $state(_now.getFullYear());
 	let viewMonth = $state(_now.getMonth()); // 0-indexed
 	let selectedDay = $state<DayData | null>(null);
 
-	const wallet = $derived(getWallet());
-	const cashFlow = $derived(buildCashFlow(getGroups(), wallet, viewYear, viewMonth));
-	const paidCashFlow = $derived(buildPaidCashFlow(getGroups(), wallet, viewYear, viewMonth));
-	const projectedCashFlow = $derived(buildProjectedCashFlow(getGroups(), wallet, viewYear, viewMonth));
+	const groups = $derived(groupsStore.groups);
+	const wallet = $derived(walletStore.wallet);
+	const cashFlow = $derived(buildCashFlow(groups, wallet, viewYear, viewMonth));
+	const paidCashFlow = $derived(buildPaidCashFlow(groups, wallet, viewYear, viewMonth));
+	const projectedCashFlow = $derived(buildProjectedCashFlow(groups, wallet, viewYear, viewMonth));
 
 	const calendarDays = $derived.by(() => {
 		const firstDay = new SvelteDate(viewYear, viewMonth, 1).getDay(); // 0=Sun

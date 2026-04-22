@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { DayData } from '$features/calendar/types';
 	import type { Group } from '$features/groups/types';
 	import { formatCurrency } from '$lib/utils/calculator';
@@ -20,7 +21,7 @@
 	const isNegative = $derived(projectedDayData?.hasNegativeBalance ?? false);
 
 	// check status จาก round โดยตรง ไม่ depend on paidAt date
-	const groupMap = $derived(new Map(groups.map((g) => [g.id, g])));
+	const groupMap = $derived(new SvelteMap(groups.map((g) => [g.id, g])));
 
 	const hasUnpaid = $derived(
 		dayData?.transactions.some((t) => {

@@ -2,7 +2,9 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { groupsStore } from '$features/groups/stores/groups.svelte';
-	import { formatCurrency, formatDate, nextRoundOwe, totalIReceive, totalIOwe } from '$lib/utils/calculator';
+	import { formatCurrency, formatDate } from '$features/shared/utils';
+	import { useGroupStats, useGroupSummary } from '$features/groups/composables';
+	import { calculateRoundProfit, getMyRoundNumbers } from '$features/groups/utils/formatters';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -25,10 +27,8 @@
 	let showDeleteDialog = $state(false);
 	let showExportDialog = $state(false);
 
-	const owe = $derived(group ? nextRoundOwe(group) : 0);
-	const sumReceive = $derived(group ? totalIReceive(group) : 0);
-	const sumOwe = $derived(group ? totalIOwe(group) : 0);
-	const paidCount = $derived(group?.rounds.filter((r) => r.status === 'paid').length ?? 0);
+	const { paidCount } = useGroupStats();
+	const { owe, sumReceive, sumOwe, profit, isProfitable } = useGroupSummary(() => group);
 
 	function openEdit(round: Round) {
 		editRound = round;
@@ -83,6 +83,18 @@
 		if (!group) return;
 		groupsStore.toggleActive(group.id);
 		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+	}
+
+	function toggleMyRound(roundNumber: number) {
+		if (!group) return;
+		groupsStore.toggleMyRound(group.id, roundNumber);
+		toast.success('ตั้งเป็นมือรับแล้ว');
+	}
+
+	function removeMyRound(roundNumber: number) {
+		if (!group) return;
+		groupsStore.removeMyRound(group.id, roundNumber);
+		toast.success('ยกเลิกมือรับแล้ว');
 	}
 
 	function exportGroupData(): string {
@@ -187,9 +199,7 @@
 			</div>
 			<div>
 				<p class="text-xs text-muted-foreground">มือของเรา</p>
-				<p class="font-medium">
-					{group.rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber).join(', ') || '—'}
-				</p>
+				<p class="font-medium">{getMyRoundNumbers(group)}</p>
 			</div>
 			<div>
 				<p class="text-xs text-muted-foreground">จ่ายเฉลี่ย/มือ</p>
@@ -197,14 +207,14 @@
 			</div>
 			<div>
 				<p class="text-xs text-muted-foreground">ความคืบหน้า</p>
-				<p class="font-medium">{paidCount}/{group.rounds.length} มือ</p>
+				<p class="font-medium">{paidCount(group)}/{group.rounds.length} มือ</p>
 			</div>
 		</div>
 
 		<div class="mb-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
 			<span class="text-muted-foreground">กำไร/ขาดทุน</span>
-			<span class="font-bold {sumReceive - sumOwe >= 0 ? 'text-green-600' : 'text-red-500'}">
-				{sumReceive - sumOwe >= 0 ? '+' : ''}{formatCurrency(sumReceive - sumOwe)}
+			<span class="font-bold {isProfitable ? 'text-green-600' : 'text-red-500'}">
+				{isProfitable ? '+' : ''}{formatCurrency(profit)}
 			</span>
 		</div>
 
@@ -228,29 +238,42 @@
 							{/if}
 							<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
 						</div>
-						<button
-							type="button"
-							onclick={() => openEdit(round)}
-							class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-						>
-							<Pencil class="h-3.5 w-3.5" />
-						</button>
+						<div class="flex items-center gap-1">
+							<DropdownMenu.Root>
+								<DropdownMenu.Trigger>
+									<button type="button" class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+										<EllipsisVertical class="h-3.5 w-3.5" />
+									</button>
+								</DropdownMenu.Trigger>
+								<DropdownMenu.Content class="w-40">
+									<DropdownMenu.Item onclick={() => openEdit(round)}>
+										<Pencil class="mr-2 h-3.5 w-3.5" />
+										แก้ไข
+									</DropdownMenu.Item>
+									{#if round.isMyRound}
+										<DropdownMenu.Item onclick={() => removeMyRound(round.roundNumber)} variant="destructive">
+											ยกเลิกมือรับ
+										</DropdownMenu.Item>
+									{:else}
+										<DropdownMenu.Item onclick={() => toggleMyRound(round.roundNumber)}>
+											ตั้งเป็นมือรับ
+										</DropdownMenu.Item>
+									{/if}
+								</DropdownMenu.Content>
+							</DropdownMenu.Root>
+						</div>
 					</div>
 
 					<div class="mb-3 flex items-center justify-between text-sm">
 						{#if round.isMyRound}
-							<div>
-								<p class="text-xs text-muted-foreground">เราจ่าย</p>
-								<p class="font-bold text-red-500">{formatCurrency(round.paymentAmount)}</p>
-							</div>
 							<div>
 								<p class="text-xs text-muted-foreground">เราได้รับ</p>
 								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.receiveAmount)}</p>
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-muted-foreground">สุทธิ</p>
-								<p class="font-bold {round.receiveAmount - round.paymentAmount >= 0 ? 'text-green-600' : 'text-red-500'}">
-									{round.receiveAmount - round.paymentAmount >= 0 ? '+' : ''}{formatCurrency(round.receiveAmount - round.paymentAmount)}
+								<p class="font-bold {calculateRoundProfit(round) >= 0 ? 'text-green-600' : 'text-red-500'}">
+									{calculateRoundProfit(round) >= 0 ? '+' : ''}{formatCurrency(calculateRoundProfit(round))}
 								</p>
 							</div>
 						{:else}

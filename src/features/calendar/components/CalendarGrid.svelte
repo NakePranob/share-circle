@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { SvelteDate } from 'svelte/reactivity';
+	import Card from '$lib/components/ui/card/card.svelte';
 	import type { DayData } from '$features/calendar/types';
 	import type { Group } from '$features/groups/types';
 	import { ChevronLeft, ChevronRight } from '@lucide/svelte';
@@ -29,7 +30,7 @@
 	</button>
 </div>
 
-<div class="rounded-xl border border-border overflow-hidden">
+<Card class="p-0 gap-0 overflow-hidden">
 	<div class="grid grid-cols-7 bg-muted/50">
 		{#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as dayName (dayName)}
 			<div class="py-2 text-center text-xs font-medium text-muted-foreground">{dayName}</div>
@@ -60,7 +61,7 @@
 			{/if}
 		{/each}
 	</div>
-</div>
+</Card>
 
 <div class="mt-3 flex gap-4 text-xs text-muted-foreground">
 	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> ต้องจ่าย</div>
