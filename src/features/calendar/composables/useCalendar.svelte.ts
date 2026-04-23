@@ -2,14 +2,17 @@ import { SvelteDate } from 'svelte/reactivity';
 import type { DayData } from '$features/calendar/types';
 import { buildCashFlow, buildPaidCashFlow, buildProjectedCashFlow } from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
-import { groupsStore } from '$features/groups/stores/groups.svelte';
-import { walletStore } from '$features/wallet/stores/wallet.svelte';
+import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 
 /**
  * Composable สำหรับจัดการ calendar logic
  * รับ stores โดยตรง ไม่ใช้ callback เพื่อลด boilerplate
  */
 export function useCalendar() {
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
+
 	const _now = new SvelteDate();
 	let viewYear = $state(_now.getFullYear());
 	let viewMonth = $state(_now.getMonth()); // 0-indexed

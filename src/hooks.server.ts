@@ -14,4 +14,6 @@ const handleParaglide: Handle = ({ event, resolve }) =>
 		});
 	});
 
-export const handle: Handle = handleParaglide;
+export const handle: Handle = async ({ event, resolve }) => {
+	return handleParaglide({ event, resolve });
+};

@@ -1,6 +1,8 @@
 import type { Group, Round } from '$features/groups/types';
 import { nextRoundOwe } from '$features/groups/utils/calculators';
 import { SvelteMap, SvelteSet } from 'svelte/reactivity';
+import { getUpcomingPayments, getUpcomingPayouts } from '$features/calendar/utils/cashflow';
+import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 
 interface UpcomingPayment {
 	group: Group;
@@ -25,18 +27,18 @@ export interface FlatRound {
 
 /**
  * Composable สำหรับจัดการรายการที่ใกล้ถึง (upcoming rounds)
- * ย้าย logic จาก component มาเพื่อให้ทดสอบและ reuse ได้ง่ายขึ้น
- * @param groups - รายการวงทั้งหมด
- * @param upcomingPayments - รายการที่ต้องจ่ายที่ใกล้ถึง
- * @param upcomingPayouts - รายการที่จะได้รับที่ใกล้ถึง
+ * อ่านค่าจาก stores โดยตรงเพื่อให้ reactive เมื่อข้อมูลเปลี่ยน
  * @returns รายการที่ใกล้ถึงที่จัดเรียงตามวันที่
  */
-export function useUpcomingRounds(
-	groups: Group[],
-	upcomingPayments: UpcomingPayment[],
-	upcomingPayouts: UpcomingPayout[]
-) {
-	const flatRounds = $derived(buildFlatRounds(groups, upcomingPayments, upcomingPayouts));
+export function useUpcomingRounds() {
+	const groupsStore = useGroupsStore();
+
+	const flatRounds = $derived.by(() => {
+		const groups = groupsStore.groups;
+		const upcomingPayments = getUpcomingPayments(groups, 3);
+		const upcomingPayouts = getUpcomingPayouts(groups, 3);
+		return buildFlatRounds(groups, upcomingPayments, upcomingPayouts);
+	});
 
 	function buildFlatRounds(
 		groups: Group[],
@@ -63,7 +65,7 @@ export function useUpcomingRounds(
 					roundNumber: n,
 					payment: paymentMap.get(n) ?? null,
 					payout: payoutMap.get(n) ?? null,
-					date: paymentMap.get(n)?.round.date ?? payoutMap.get(n)!.round.date
+					date: paymentMap.get(n)?.round.date ?? payoutMap.get(n)?.round.date ?? ''
 				}));
 			})
 			.sort((a, b) => a.date.localeCompare(b.date));

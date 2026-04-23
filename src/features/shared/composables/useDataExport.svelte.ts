@@ -1,12 +1,15 @@
 import { SvelteDate } from 'svelte/reactivity';
-import { groupsStore } from '$features/groups/stores/groups.svelte';
-import { walletStore } from '$features/wallet/stores/wallet.svelte';
+import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 
 /**
  * Composable สำหรับจัดการ export ข้อมูล
  * ย้าย logic export จาก component มาที่นี่
  */
 export function useDataExport() {
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
+
 	function exportData() {
 		const data = {
 			groups: groupsStore.groups,

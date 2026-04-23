@@ -78,7 +78,7 @@
 }
 
 body {
-  background-color: var(--background);
+  background-color: var(--color-zinc-50);
   color: var(--foreground);
   font-family: 'Noto Sans Variable', sans-serif;
 }

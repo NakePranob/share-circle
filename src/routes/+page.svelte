@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 	import { formatCurrency, formatDate, thaiDateToday } from '$features/shared/utils';
+
+	const groupsStore = useGroupsStore();
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -25,12 +27,11 @@
 	const month = now.getMonth();
 
 	const dashboard = useDashboard(year, month);
-	const { flatRounds } = useUpcomingRounds(
-		dashboard.activeGroups,
-		dashboard.upcomingPayments,
-		dashboard.upcomingPayouts
-	);
+	const upcomingRounds = useUpcomingRounds();
 	const { paidCount, nextRound, progress } = useGroupStats();
+
+	// Check if data is loaded
+	const dataLoaded = $derived(groupsStore.isLoaded);
 
 	import type { Round } from '$features/groups/types';
 
@@ -72,7 +73,11 @@
 		<p class="text-xs text-muted-foreground">{thaiDateToday()}</p>
 	</header>
 
-	{#if dashboard.activeGroups.length === 0}
+	{#if !dataLoaded}
+		<div class="flex items-center justify-center py-16">
+			<p class="text-sm text-muted-foreground">กำลังโหลด...</p>
+		</div>
+	{:else if dashboard.activeGroups.length === 0}
 		<div class="flex flex-col items-center justify-center py-16 text-center">
 			<Users class="mb-4 h-16 w-16 text-muted-foreground/40" />
 			<h2 class="mb-2 text-lg font-semibold">ยังไม่มีวงแชร์</h2>
@@ -85,7 +90,7 @@
 	{:else}
 		<!-- Upcoming flat list sorted by date -->
 		<div>
-			{#if flatRounds.length === 0}
+			{#if upcomingRounds.flatRounds.length === 0}
 				<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการในช่วงนี้ 🎉</p>
 			{:else}
 				<Card class="overflow-hidden p-0 gap-0 space-y-0">
@@ -108,7 +113,7 @@
 						})}
 					>
 						<div class="divide-y divide-border">
-							{#each flatRounds as { group, owe, roundNumber, payment, payout, date } (`${group.id}-${roundNumber}`)}
+							{#each upcomingRounds.flatRounds as { group, owe, roundNumber, payment, payout, date } (`${group.id}-${roundNumber}`)}
 								{@const hasPayment = payment !== null}
 								{@const hasPayout = payout !== null}
 								{@const isOverdue = payment && payment.daysUntil < 0}
@@ -129,7 +134,7 @@
 									onclick={() => {
 										selectedPayment = {
 											group,
-											round: payment?.round ?? payout!.round,
+											round: payment?.round ?? payout?.round ?? { roundNumber: 0, date: '', paymentAmount: 0, receiveAmount: 0, status: 'pending', payoutStatus: 'pending', isMyRound: false, managementFee: 0 },
 											daysUntil: payment?.daysUntil ?? 0,
 											owe,
 											payout: payout?.round ?? null

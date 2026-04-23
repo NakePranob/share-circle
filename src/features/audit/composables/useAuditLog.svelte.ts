@@ -1,6 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
-import { groupsStore } from '$features/groups/stores/groups.svelte';
-import { walletStore } from '$features/wallet/stores/wallet.svelte';
+import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { paidTransactions } from '$lib/utils/cashflow';
 import type { Transaction } from '$features/wallet/types';
 
@@ -18,21 +18,23 @@ function sortKey(entry: TransactionEntry): string {
 }
 
 export function useAuditLog() {
-	const groups = $derived(groupsStore.groups);
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
+
 	const wallet = $derived(walletStore.wallet);
-	const groupMap = $derived(new SvelteMap(groups.map((g) => [g.id, g.name])));
+	const groupMap = $derived(new SvelteMap(groupsStore.groups.map((g: { id: string; name: string }) => [g.id, g.name])));
 
 	const manualTransactions = $derived(
 		wallet.manualTransactions
-			.map((t) => ({ transaction: t, groupName: undefined }))
-			.sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
+			.map((t: Transaction) => ({ transaction: t, groupName: undefined as string | undefined }))
+			.sort((a: TransactionEntry, b: TransactionEntry) => sortKey(b).localeCompare(sortKey(a)))
 	);
 
 	const groupTransactions = $derived(
-		paidTransactions(groups)
+		paidTransactions(groupsStore.groups)
 			.map((t) => ({
 				transaction: t,
-				groupName: t.groupId ? groupMap.get(t.groupId) : undefined
+				groupName: t.groupId ? (groupMap.get(t.groupId) as string | undefined) : undefined
 			}))
 			.sort((a, b) => sortKey(b).localeCompare(sortKey(a)))
 	);

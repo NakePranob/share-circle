@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 	import { useCalendar } from '$features/calendar/composables';
 	import { useWalletActions } from '$features/wallet/composables';
 	import WalletCard from '$features/calendar/components/WalletCard.svelte';
+
+	const groupsStore = useGroupsStore();
 	import CalendarGrid from '$features/calendar/components/CalendarGrid.svelte';
 	import DaySheet from '$features/calendar/components/DaySheet.svelte';
 	import WalletDialogs from '$features/wallet/components/WalletDialogs.svelte';

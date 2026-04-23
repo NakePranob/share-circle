@@ -1,6 +1,6 @@
 import { SvelteSet } from 'svelte/reactivity';
-import { groupsStore } from '$features/groups/stores/groups.svelte';
-import { walletStore } from '$features/wallet/stores/wallet.svelte';
+import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import type { TransactionType } from '$features/wallet/types';
 import type { Round } from '$features/groups/types';
 
@@ -9,6 +9,9 @@ import type { Round } from '$features/groups/types';
  * ย้าย logic import จาก component มาที่นี่
  */
 export function useDataImport() {
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
+
 	let importJSONText = $state('');
 	let showDuplicateDialog = $state(false);
 	let duplicateNames = $state<string[]>([]);

@@ -5,8 +5,12 @@
 
 	import { House, Calendar, Users, History } from '@lucide/svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
+	import { useAppData } from '$features/shared/composables/useAppData.svelte';
 
 	let { children } = $props();
+
+	// Load all app data (groups, wallet) when user is authenticated
+	useAppData();
 
 	const navItems = [
 		{ href: '/', label: 'หน้าหลัก', icon: House },
@@ -21,7 +25,7 @@
 	}
 </script>
 
-<div class="mx-auto flex min-h-screen max-w-2xl flex-col bg-zinc-50">
+<div class="mx-auto flex min-h-screen max-w-2xl flex-col">
 	<main class="flex-1 pb-20">
 		{@render children()}
 	</main>

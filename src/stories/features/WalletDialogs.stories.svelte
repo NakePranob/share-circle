@@ -22,9 +22,9 @@
 			balanceInput: 0,
 			txnAmount: 0,
 			txnNote: '',
-			saveBalance: () => {},
-			deposit: () => {},
-			withdraw: () => {},
+			saveBalance: async () => {},
+			deposit: async () => {},
+			withdraw: async () => {},
 			openBalanceDialog: () => {},
 			openDepositDialog: () => {},
 			openWithdrawDialog: () => {}

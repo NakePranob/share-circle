@@ -66,6 +66,7 @@
 		"vitest": "^4.1.4"
 	},
 	"dependencies": {
+		"@supabase/supabase-js": "^2.104.0",
 		"date-fns": "^4.1.0",
 		"formsnap": "^2.0.1",
 		"zod": "^4.3.6"

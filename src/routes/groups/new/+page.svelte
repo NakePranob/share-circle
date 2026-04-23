@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 	import { toast } from 'svelte-sonner';
 	import { ArrowLeft } from '@lucide/svelte';
+
+	const groupsStore = useGroupsStore();
 	import GroupForm from '$features/groups/components/GroupForm.svelte';
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
 	import { buildRoundsFromFormData } from '$features/groups/utils/calculators';

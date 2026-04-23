@@ -1,8 +1,9 @@
-import { walletStore } from '$features/wallet/stores/wallet.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { toast } from 'svelte-sonner';
 import { TOAST_MESSAGES, ERROR_MESSAGES } from '$features/wallet/constants';
 
 export function useWalletActions() {
+	const walletStore = useWalletStore();
 	let showBalanceDialog = $state(false);
 	let showDepositDialog = $state(false);
 	let showWithdrawDialog = $state(false);
@@ -12,30 +13,30 @@ export function useWalletActions() {
 
 	const wallet = $derived(walletStore.wallet);
 
-	function saveBalance() {
-		walletStore.setInitialBalance(balanceInput);
+	async function saveBalance() {
+		await walletStore.setInitialBalance(balanceInput);
 		toast.success(TOAST_MESSAGES.SET_INITIAL_BALANCE);
 		showBalanceDialog = false;
 	}
 
-	function deposit() {
+	async function deposit() {
 		if (txnAmount <= 0) {
 			toast.error(ERROR_MESSAGES.INVALID_AMOUNT);
 			return;
 		}
-		walletStore.addTransaction('deposit', txnAmount, txnNote);
+		await walletStore.addTransaction('deposit', txnAmount, txnNote);
 		toast.success('เติมเงินเรียบร้อย');
 		showDepositDialog = false;
 		txnAmount = 0;
 		txnNote = '';
 	}
 
-	function withdraw() {
+	async function withdraw() {
 		if (txnAmount <= 0) {
 			toast.error(ERROR_MESSAGES.INVALID_AMOUNT);
 			return;
 		}
-		walletStore.addTransaction('withdrawal', txnAmount, txnNote);
+		await walletStore.addTransaction('withdrawal', txnAmount, txnNote);
 		toast.success(TOAST_MESSAGES.WITHDRAW);
 		showWithdrawDialog = false;
 		txnAmount = 0;

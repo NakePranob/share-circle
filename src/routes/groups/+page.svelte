@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$features/groups/stores/groups.svelte';
-	import { walletStore } from '$features/wallet/stores/wallet.svelte';
+	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { useDataExport, useDataImport } from '$features/shared/composables';
+
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -13,8 +16,8 @@
 	import GroupCard from '$features/groups/components/GroupCard.svelte';
 
 	const groups = $derived(groupsStore.groups);
-	const activeGroups = $derived(groups.filter((g) => g.isActive));
-	const closedGroups = $derived(groups.filter((g) => !g.isActive));
+	const activeGroups = $derived(groups.filter((g: { isActive: boolean }) => g.isActive));
+	const closedGroups = $derived(groups.filter((g: { isActive: boolean }) => !g.isActive));
 
 	const dataExport = useDataExport();
 	const dataImport = useDataImport();

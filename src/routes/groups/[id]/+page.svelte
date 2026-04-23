@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { groupsStore } from '$features/groups/stores/groups.svelte';
+	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 	import { formatCurrency, formatDate } from '$features/shared/utils';
+
+	const groupsStore = useGroupsStore();
 	import { useGroupStats, useGroupSummary } from '$features/groups/composables';
 	import { calculateRoundProfit, getMyRoundNumbers } from '$features/groups/utils/formatters';
 	import { toast } from 'svelte-sonner';
@@ -20,6 +22,13 @@
 	const id = $derived(page.params.id ?? '');
 	const group = $derived(groupsStore.getById(id));
 
+// Load rounds when group changes
+$effect(() => {
+	if (id) {
+		groupsStore.loadGroupWithRounds(id);
+	}
+});
+
 	let editRound = $state<Round | null>(null);
 	let editDate = $state('');
 	let editAmount = $state(0);
@@ -28,7 +37,7 @@
 	let showExportDialog = $state(false);
 
 	const { paidCount } = useGroupStats();
-	const { owe, sumReceive, sumOwe, profit, isProfitable } = useGroupSummary(() => group);
+	const groupSummary = useGroupSummary(() => group);
 
 	function openEdit(round: Round) {
 		editRound = round;
@@ -183,11 +192,11 @@
 		<div class="mb-4 grid grid-cols-2 gap-3">
 			<div class="rounded-xl bg-green-50 p-3 dark:bg-green-950/20">
 				<p class="text-xs text-muted-foreground">รับรวม</p>
-				<p class="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(sumReceive)}</p>
+				<p class="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(groupSummary.sumReceive)}</p>
 			</div>
 			<div class="rounded-xl bg-red-50 p-3 dark:bg-red-950/20">
 				<p class="text-xs text-muted-foreground">จ่ายรวม</p>
-				<p class="text-lg font-bold text-red-500">{formatCurrency(sumOwe)}</p>
+				<p class="text-lg font-bold text-red-500">{formatCurrency(groupSummary.sumOwe)}</p>
 			</div>
 		</div>
 
@@ -203,7 +212,7 @@
 			</div>
 			<div>
 				<p class="text-xs text-muted-foreground">จ่ายเฉลี่ย/มือ</p>
-				<p class="font-medium">{formatCurrency(owe)}</p>
+				<p class="font-medium">{formatCurrency(groupSummary.owe)}</p>
 			</div>
 			<div>
 				<p class="text-xs text-muted-foreground">ความคืบหน้า</p>
@@ -213,8 +222,8 @@
 
 		<div class="mb-3 flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
 			<span class="text-muted-foreground">กำไร/ขาดทุน</span>
-			<span class="font-bold {isProfitable ? 'text-green-600' : 'text-red-500'}">
-				{isProfitable ? '+' : ''}{formatCurrency(profit)}
+			<span class="font-bold {groupSummary.isProfitable ? 'text-green-600' : 'text-red-500'}">
+				{groupSummary.isProfitable ? '+' : ''}{formatCurrency(groupSummary.profit)}
 			</span>
 		</div>
 
