@@ -21,11 +21,13 @@
 
 	const id = $derived(page.params.id ?? '');
 	const group = $derived(groupsStore.getById(id));
+	let loadedId = $state('');
 
-// Load rounds when group changes
-$effect(() => {
-	if (id) {
+// Load rounds when id changes
+$effect.pre(() => {
+	if (id && id !== loadedId) {
 		groupsStore.loadGroupWithRounds(id);
+		loadedId = id;
 	}
 });
 
@@ -35,6 +37,9 @@ $effect(() => {
 	let editPaymentAmount = $state(0);
 	let showDeleteDialog = $state(false);
 	let showExportDialog = $state(false);
+	let isSaving = $state(false);
+	let isDeleting = $state(false);
+	let isToggling = $state(false);
 
 	const { paidCount } = useGroupStats();
 	const groupSummary = useGroupSummary(() => group);
@@ -46,52 +51,89 @@ $effect(() => {
 		editPaymentAmount = round.paymentAmount;
 	}
 
-	function saveEdit() {
+	async function saveEdit() {
 		if (!group || !editRound) return;
-		groupsStore.updateRound(group.id, editRound.roundNumber, {
-			date: editDate,
-			receiveAmount: editAmount,
-			paymentAmount: editPaymentAmount
-		});
-		toast.success('แก้ไขเรียบร้อย');
-		editRound = null;
+		isSaving = true;
+		try {
+			await groupsStore.updateRound(group.id, editRound.roundNumber, {
+				date: editDate,
+				receiveAmount: editAmount,
+				paymentAmount: editPaymentAmount
+			});
+			toast.success('แก้ไขเรียบร้อย');
+			editRound = null;
+		} catch (error) {
+			console.error('Failed to update round:', error);
+		} finally {
+			isSaving = false;
+		}
 	}
 
-	function markPaid(roundNumber: number) {
+	async function markPaid(roundNumber: number) {
 		if (!group) return;
-		groupsStore.markRoundPaid(group.id, roundNumber);
-		toast.success('บันทึกแล้ว');
+		try {
+			await groupsStore.markRoundPaid(group.id, roundNumber);
+			toast.success('บันทึกแล้ว');
+		} catch (error) {
+			console.error('Failed to mark as paid:', error);
+		}
 	}
 
-	function markPending(roundNumber: number) {
+	async function markPending(roundNumber: number) {
 		if (!group) return;
-		groupsStore.markRoundPending(group.id, roundNumber);
-		toast.success('ย้อนกลับเป็นรอแล้ว');
+		try {
+			await groupsStore.markRoundPending(group.id, roundNumber);
+			toast.success('ย้อนกลับเป็นรอแล้ว');
+		} catch (error) {
+			console.error('Failed to mark as pending:', error);
+		}
 	}
 
-	function markReceived(roundNumber: number) {
+	async function markReceived(roundNumber: number) {
 		if (!group) return;
-		groupsStore.markRoundReceived(group.id, roundNumber);
-		toast.success('บันทึกแล้ว');
+		try {
+			await groupsStore.markRoundReceived(group.id, roundNumber);
+			toast.success('บันทึกแล้ว');
+		} catch (error) {
+			console.error('Failed to mark as received:', error);
+		}
 	}
 
-	function markReceivedPending(roundNumber: number) {
+	async function markReceivedPending(roundNumber: number) {
 		if (!group) return;
-		groupsStore.markRoundReceivedPending(group.id, roundNumber);
-		toast.success('ย้อนกลับเป็นรอแล้ว');
+		try {
+			await groupsStore.markRoundReceivedPending(group.id, roundNumber);
+			toast.success('ย้อนกลับเป็นรอแล้ว');
+		} catch (error) {
+			console.error('Failed to mark as received pending:', error);
+		}
 	}
 
-	function deleteGroup() {
+	async function deleteGroup() {
 		if (!group) return;
-		groupsStore.remove(group.id);
-		toast.success('ลบวงแล้ว');
-		goto('/groups');
+		isDeleting = true;
+		try {
+			await groupsStore.remove(group.id);
+			toast.success('ลบวงแล้ว');
+			goto('/groups');
+		} catch (error) {
+			console.error('Failed to delete group:', error);
+		} finally {
+			isDeleting = false;
+		}
 	}
 
-	function toggleActive() {
+	async function toggleActive() {
 		if (!group) return;
-		groupsStore.toggleActive(group.id);
-		toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+		isToggling = true;
+		try {
+			await groupsStore.toggleActive(group.id);
+			toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+		} catch (error) {
+			console.error('Failed to toggle active:', error);
+		} finally {
+			isToggling = false;
+		}
 	}
 
 	function toggleMyRound(roundNumber: number) {
@@ -173,10 +215,10 @@ $effect(() => {
 					</button>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content class="w-44">
-					<DropdownMenu.Item onclick={toggleActive}>
-						{group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
+					<DropdownMenu.Item onclick={toggleActive} disabled={isToggling}>
+						{isToggling ? 'กำลังบันทึก...' : (group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง')}
 					</DropdownMenu.Item>
-					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive">
+					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive" disabled={isDeleting}>
 						ลบวง
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
@@ -378,7 +420,9 @@ $effect(() => {
 
 			<Dialog.Footer>
 				<Button variant="outline" onclick={() => (editRound = null)}>ยกเลิก</Button>
-				<Button onclick={saveEdit}>บันทึก</Button>
+				<Button onclick={saveEdit} disabled={isSaving}>
+					{isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
+				</Button>
 			</Dialog.Footer>
 		</Dialog.Content>
 	</Dialog.Root>
@@ -397,8 +441,9 @@ $effect(() => {
 				<AlertDialog.Action
 					onclick={deleteGroup}
 					class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+					disabled={isDeleting}
 				>
-					ลบ
+					{isDeleting ? 'กำลังลบ...' : 'ลบ'}
 				</AlertDialog.Action>
 			</AlertDialog.Footer>
 		</AlertDialog.Content>

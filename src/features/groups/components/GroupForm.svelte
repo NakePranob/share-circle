@@ -20,9 +20,10 @@
 
 	interface Props {
 		onSubmit: (data: GroupFormData) => void;
+		isSubmitting?: boolean;
 	}
 
-	let { onSubmit }: Props = $props();
+	let { onSubmit, isSubmitting = false }: Props = $props();
 
 	const initialFormState = {
 		groupName: '',
@@ -246,7 +247,9 @@
 		</div>
 	{/if}
 
-	<Button type="submit" class="w-full" size="lg">สร้างวง</Button>
+	<Button type="submit" class="w-full" size="lg" disabled={isSubmitting}>
+		{isSubmitting ? 'กำลังสร้าง...' : 'สร้างวง'}
+	</Button>
 </form>
 
 <!-- Confirm Dialog -->

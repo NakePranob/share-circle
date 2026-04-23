@@ -22,7 +22,7 @@
 		"@fontsource-variable/noto-sans": "^5.2.10",
 		"@inlang/paraglide-js": "^2.15.2",
 		"@internationalized/date": "^3.12.1",
-		"@lucide/svelte": "^1.8.0",
+		"@lucide/svelte": "^1.9.0",
 		"@storybook/addon-a11y": "^10.3.5",
 		"@storybook/addon-docs": "^10.3.5",
 		"@storybook/addon-svelte-csf": "^5.1.2",

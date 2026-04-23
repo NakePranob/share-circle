@@ -53,6 +53,13 @@ export async function createRound(round: RoundInsert) {
 	return data;
 }
 
+export async function createRounds(rounds: RoundInsert[]) {
+	const { data, error } = await supabase.from('rounds').insert(rounds).select();
+
+	if (error) throw error;
+	return data;
+}
+
 export async function updateRound(id: string, updates: RoundUpdate) {
 	const { data, error } = await supabase
 		.from('rounds')

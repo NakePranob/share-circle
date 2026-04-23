@@ -80,3 +80,9 @@ export async function getTransactionsByDateRange(
 	if (error) throw error;
 	return data;
 }
+
+export async function deleteAllTransactions(userId: string) {
+	const { error } = await supabase.from('transactions').delete().eq('user_id', userId);
+
+	if (error) throw error;
+}

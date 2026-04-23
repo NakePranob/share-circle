@@ -44,3 +44,9 @@ export async function getOrCreateWallet(userId: string) {
 	}
 	return wallet;
 }
+
+export async function deleteWallet(userId: string) {
+	const { error } = await supabase.from('wallets').delete().eq('user_id', userId);
+
+	if (error) throw error;
+}

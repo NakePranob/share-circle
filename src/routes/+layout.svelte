@@ -39,7 +39,7 @@
 				<button
 					onclick={() => goto(item.href)}
 					class="flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors {active
-						? 'text-primary'
+						? 'text-lime-600'
 						: 'text-muted-foreground hover:text-foreground'}"
 				>
 					<item.icon class="h-5 w-5" />

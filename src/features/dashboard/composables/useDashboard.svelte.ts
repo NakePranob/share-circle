@@ -14,7 +14,6 @@ export function useDashboard(year: number, month: number) {
 	const walletStore = useWalletStore();
 
 	const groups = $derived(groupsStore.groups);
-	console.log('groups', groups)
 	const wallet = $derived(walletStore.wallet);
 
 	const cashFlow = $derived(buildCashFlow(groups, wallet, year, month));

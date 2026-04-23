@@ -47,3 +47,9 @@ export async function deleteGroup(id: string) {
 
 	if (error) throw error;
 }
+
+export async function deleteAllGroups(userId: string) {
+	const { error } = await supabase.from('groups').delete().eq('user_id', userId);
+
+	if (error) throw error;
+}

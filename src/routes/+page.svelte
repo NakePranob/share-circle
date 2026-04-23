@@ -20,7 +20,7 @@
 	import { toast } from 'svelte-sonner';
 	import { useDashboard, useUpcomingRounds } from '$features/dashboard/composables';
 	import { useGroupStats } from '$features/groups/composables';
-	import { cn } from '$lib/utils'
+	import { cn } from '$lib/utils';
 
 	const now = new Date();
 	const year = now.getFullYear();
@@ -93,7 +93,7 @@
 			{#if upcomingRounds.flatRounds.length === 0}
 				<p class="py-2 text-sm text-muted-foreground">ไม่มีรายการในช่วงนี้ 🎉</p>
 			{:else}
-				<Card class="overflow-hidden p-0 gap-0 space-y-0">
+				<Card class="gap-0 space-y-0 overflow-hidden p-0">
 					<button
 						type="button"
 						onclick={() => (listOpen = !listOpen)}
@@ -107,7 +107,7 @@
 						{/if}
 					</button>
 					<div
-						class={cn("overflow-hidden transition-all duration-300 ease-in-out p-0", {
+						class={cn('overflow-hidden p-0 transition-all duration-300 ease-in-out', {
 							'max-h-[2000px]': listOpen,
 							'max-h-0': !listOpen
 						})}
@@ -134,7 +134,17 @@
 									onclick={() => {
 										selectedPayment = {
 											group,
-											round: payment?.round ?? payout?.round ?? { roundNumber: 0, date: '', paymentAmount: 0, receiveAmount: 0, status: 'pending', payoutStatus: 'pending', isMyRound: false, managementFee: 0 },
+											round: payment?.round ??
+												payout?.round ?? {
+													roundNumber: 0,
+													date: '',
+													paymentAmount: 0,
+													receiveAmount: 0,
+													status: 'pending',
+													payoutStatus: 'pending',
+													isMyRound: false,
+													managementFee: 0
+												},
 											daysUntil: payment?.daysUntil ?? 0,
 											owe,
 											payout: payout?.round ?? null
@@ -181,31 +191,28 @@
 		</div>
 
 		<!-- Active groups -->
-		<Card>
-			<CardHeader class="pb-2">
-				<CardTitle class="flex items-center justify-between text-base">
-					<span class="flex items-center gap-2">
-						<Users class="h-4 w-4" />
-						วงที่กำลังดำเนิน
-					</span>
-					<Button variant="ghost" size="sm" onclick={() => goto('/groups')}>ดูทั้งหมด</Button>
-				</CardTitle>
-			</CardHeader>
-			<CardContent>
-				{#if dashboard.activeGroups.length === 0}
-					<p class="py-2 text-sm text-muted-foreground">ไม่มีวงที่กำลังดำเนิน</p>
-				{:else}
-					<div class="space-y-3">
-						{#each dashboard.activeGroups as group (group.id)}
-							{@const paid = paidCount(group)}
-							{@const total = group.rounds.length}
-							{@const next = nextRound(group)}
-							{@const progressValue = progress(group)}
-							<button
-								type="button"
-								onclick={() => goto(`/groups/${group.id}`)}
-								class="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50"
-							>
+		<div class="flex items-center justify-between text-base">
+			<b class="flex items-center gap-2">
+				<Users class="h-4 w-4" />
+				วงที่กำลังดำเนิน
+			</b>
+			<Button variant="outline" size="sm" onclick={() => goto('/groups')}>ดูทั้งหมด</Button>
+		</div>
+		<div>
+			{#if dashboard.activeGroups.length === 0}
+				<p class="py-2 text-sm text-muted-foreground">ไม่มีวงที่กำลังดำเนิน</p>
+			{:else}
+				<div class="space-y-3">
+					{#each dashboard.activeGroups as group (group.id)}
+						{@const paid = paidCount(group)}
+						{@const total = group.rounds.length}
+						{@const next = nextRound(group)}
+						{@const progressValue = progress(group)}
+						<Card
+							onclick={() => goto(`/groups/${group.id}`)}
+							class="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50"
+						>
+							<CardContent class="px-2">
 								<div class="mb-2 flex items-center justify-between">
 									<p class="font-medium">{group.name}</p>
 									<p class="text-xs text-muted-foreground">{paid}/{total} มือ</p>
@@ -217,12 +224,12 @@
 										{next.isMyRound ? `รับ ${formatCurrency(next.receiveAmount)}` : `จ่าย`}
 									</p>
 								{/if}
-							</button>
-						{/each}
-					</div>
-				{/if}
-			</CardContent>
-		</Card>
+							</CardContent>
+						</Card>
+					{/each}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 

@@ -1,9 +1,10 @@
 import { useAuth } from '$features/auth/composables/useAuth.svelte';
-import { getGroups, createGroup, updateGroup, deleteGroup } from '$lib/supabase/groups';
+import { getGroups, createGroup, updateGroup, deleteGroup, deleteAllGroups } from '$lib/supabase/groups';
 import {
 	getRounds,
 	getRoundsByUserId,
 	createRound,
+	createRounds,
 	updateRound as updateRoundInSupabase,
 	updateRoundStatus,
 	updatePayoutStatus,
@@ -82,18 +83,20 @@ export function useGroupsStore() {
 
 			// Create rounds if provided
 			if (group.rounds && group.rounds.length > 0) {
-				for (const round of group.rounds) {
-					await createRound({
-						group_id: data.id,
-						round_number: round.roundNumber,
-						date: round.date,
-						payment_amount: round.paymentAmount,
-						receive_amount: round.receiveAmount,
-						status: round.status ?? 'pending',
-						is_my_round: round.isMyRound ?? false,
-						management_fee: round.managementFee ?? 0
-					});
-				}
+				const roundsToInsert = group.rounds.map((round) => ({
+					group_id: data.id,
+					round_number: round.roundNumber,
+					date: round.date,
+					payment_amount: round.paymentAmount,
+					receive_amount: round.receiveAmount,
+					status: round.status ?? 'pending',
+					paid_at: round.paidAt ?? null,
+					payout_status: round.payoutStatus ?? 'pending',
+					received_at: round.receivedAt ?? null,
+					is_my_round: round.isMyRound ?? false,
+					management_fee: round.managementFee ?? 0
+				}));
+				await createRounds(roundsToInsert);
 			}
 
 			const newGroup: Group = {
@@ -335,6 +338,17 @@ export function useGroupsStore() {
 		groups = [];
 	}
 
+	async function deleteAll(): Promise<void> {
+		if (!auth.userId) throw new Error('Not authenticated');
+		try {
+			await deleteAllGroups(auth.userId);
+			groups = [];
+		} catch (error) {
+			toast.error('Failed to delete all groups');
+			throw error;
+		}
+	}
+
 	return {
 		get groups() {
 			return groups;
@@ -352,6 +366,7 @@ export function useGroupsStore() {
 		update,
 		remove,
 		clearAll,
+		deleteAll,
 		loadRoundsForGroup,
 		updateRound,
 		markRoundPaid,

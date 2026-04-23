@@ -1,6 +1,6 @@
 import { useAuth } from '$features/auth/composables/useAuth.svelte';
-import { getOrCreateWallet, updateWallet } from '$lib/supabase/wallets';
-import { getTransactions, createTransaction, deleteTransaction } from '$lib/supabase/transactions';
+import { getOrCreateWallet, updateWallet, deleteWallet } from '$lib/supabase/wallets';
+import { getTransactions, createTransaction, deleteTransaction, deleteAllTransactions } from '$lib/supabase/transactions';
 import type { Wallet, Transaction, TransactionType } from '$features/wallet/types';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 import { toast } from 'svelte-sonner';
@@ -120,6 +120,36 @@ function clearAll(): void {
 	};
 }
 
+async function deleteAll(): Promise<void> {
+	if (!auth.userId) throw new Error('Not authenticated');
+	try {
+		await deleteAllTransactions(auth.userId);
+		await deleteWallet(auth.userId);
+		wallet = {
+			initialBalance: 0,
+			manualTransactions: []
+		};
+	} catch (error) {
+		toast.error('Failed to delete wallet data');
+		throw error;
+	}
+}
+
+async function clearAndReset(): Promise<void> {
+	if (!auth.userId) throw new Error('Not authenticated');
+	try {
+		await deleteAllTransactions(auth.userId);
+		await updateWallet(auth.userId, { initial_balance: 0 });
+		wallet = {
+			initialBalance: 0,
+			manualTransactions: []
+		};
+	} catch (error) {
+		toast.error('Failed to clear wallet data');
+		throw error;
+	}
+}
+
 	return {
 		get wallet() {
 			return wallet;
@@ -134,6 +164,8 @@ function clearAll(): void {
 		setInitialBalance,
 		addTransaction,
 		removeTransaction,
-		clearAll
+		clearAll,
+		deleteAll,
+		clearAndReset
 	};
 }

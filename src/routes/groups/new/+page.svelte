@@ -9,16 +9,25 @@
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
 	import { buildRoundsFromFormData } from '$features/groups/utils/calculators';
 
-	function submit(data: GroupFormData) {
-		const rounds = buildRoundsFromFormData(data);
+	let isSubmitting = $state(false);
 
-		groupsStore.add({
-			name: data.groupName.trim(),
-			rounds,
-			isActive: true
-		});
-		toast.success('สร้างวงแชร์เรียบร้อย!');
-		goto('/groups');
+	async function submit(data: GroupFormData) {
+		isSubmitting = true;
+		try {
+			const rounds = buildRoundsFromFormData(data);
+
+			await groupsStore.add({
+				name: data.groupName.trim(),
+				rounds,
+				isActive: true
+			});
+			toast.success('สร้างวงแชร์เรียบร้อย!');
+			goto('/groups');
+		} catch (error) {
+			console.error('Failed to create group:', error);
+		} finally {
+			isSubmitting = false;
+		}
 	}
 </script>
 
@@ -30,5 +39,5 @@
 		<h1 class="text-xl font-bold">สร้างวงใหม่</h1>
 	</header>
 
-	<GroupForm onSubmit={submit} />
+	<GroupForm onSubmit={submit} {isSubmitting} />
 </div>

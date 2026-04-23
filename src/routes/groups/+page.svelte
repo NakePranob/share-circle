@@ -3,6 +3,7 @@
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { useDataExport, useDataImport } from '$features/shared/composables';
+	import { toast } from 'svelte-sonner';
 
 	const groupsStore = useGroupsStore();
 	const walletStore = useWalletStore();
@@ -14,6 +15,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { CirclePlus, Users, Trash2, Download, Upload, Copy, MoreVertical } from '@lucide/svelte';
 	import GroupCard from '$features/groups/components/GroupCard.svelte';
+	import { Switch } from '$lib/components/ui/switch';
 
 	const groups = $derived(groupsStore.groups);
 	const activeGroups = $derived(groups.filter((g: { isActive: boolean }) => g.isActive));
@@ -26,35 +28,107 @@
 	let deleteConfirmText = $state('');
 	let showExportDialog = $state(false);
 	let showImportDialog = $state(false);
+	let showReplaceConfirmDialog = $state(false);
+	let isDeleting = $state(false);
+	let isImporting = $state(false);
+	let isExporting = $state(false);
+	let isCopying = $state(false);
+	let isImportingFromPaste = $state(false);
+	let isImportingWithRename = $state(false);
+	let localImportMode = $state(false);
 
-	function handleDeleteAll() {
-		groupsStore.clearAll();
-		walletStore.clearAll();
-		showDeleteDialog = false;
-		deleteConfirmText = '';
+	// Validate JSON when text changes
+	$effect(() => {
+		if (dataImport.importJSONText) {
+			dataImport.parseAndValidateJSON(dataImport.importJSONText);
+		} else {
+			dataImport.hasWallet = false;
+		}
+	});
+
+	// Sync local import mode with composable
+	$effect(() => {
+		dataImport.importMode = localImportMode ? 'replace' : 'add';
+	});
+
+	async function handleDeleteAll() {
+		isDeleting = true;
+		try {
+			await groupsStore.deleteAll();
+			await walletStore.clearAndReset();
+			showDeleteDialog = false;
+			deleteConfirmText = '';
+			toast.success('ลบข้อมูลทั้งหมดเรียบร้อย');
+		} catch (error) {
+			console.error('Failed to delete all data:', error);
+		} finally {
+			isDeleting = false;
+		}
 	}
 
-	function downloadJSON() {
-		dataExport.downloadJSON();
-		showExportDialog = false;
+	async function downloadJSON() {
+		isExporting = true;
+		try {
+			dataExport.downloadJSON();
+			showExportDialog = false;
+		} finally {
+			isExporting = false;
+		}
 	}
 
 	async function copyJSON() {
-		await dataExport.copyJSON();
-		showExportDialog = false;
+		isCopying = true;
+		try {
+			await dataExport.copyJSON();
+			showExportDialog = false;
+		} finally {
+			isCopying = false;
+		}
 	}
 
 	async function handleFileUpload(event: Event) {
-		await dataImport.handleFileUpload(event);
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (file) {
+			const text = await file.text();
+			dataImport.importJSONText = text;
+		}
 	}
 
 	async function handleImportFromPaste() {
-		await dataImport.handleImportFromPaste();
+		isImportingFromPaste = true;
+		try {
+			if (localImportMode) {
+				showReplaceConfirmDialog = true;
+				return;
+			}
+			await dataImport.handleImportFromPaste(localImportMode ? 'replace' : 'add');
+		} finally {
+			isImportingFromPaste = false;
+		}
 	}
 
-	function handleImportWithRenamedGroups() {
-		dataImport.handleImportWithRenamedGroups();
-		showImportDialog = false;
+	async function confirmReplaceImport() {
+		isImporting = true;
+		try {
+			await dataImport.importData(dataImport.importJSONText, 'replace');
+			showReplaceConfirmDialog = false;
+			showImportDialog = false;
+		} catch (error) {
+			console.error('Failed to replace import:', error);
+		} finally {
+			isImporting = false;
+		}
+	}
+
+	async function handleImportWithRenamedGroups() {
+		isImportingWithRename = true;
+		try {
+			dataImport.handleImportWithRenamedGroups();
+			showImportDialog = false;
+		} finally {
+			isImportingWithRename = false;
+		}
 	}
 </script>
 
@@ -73,16 +147,16 @@
 					</Button>
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content class="w-44">
-					<DropdownMenu.Item onclick={() => showExportDialog = true}>
+					<DropdownMenu.Item onclick={() => (showExportDialog = true)}>
 						<Download class="mr-2 h-4 w-4" />
 						ส่งออก JSON
 					</DropdownMenu.Item>
-					<DropdownMenu.Item onclick={() => showImportDialog = true}>
+					<DropdownMenu.Item onclick={() => (showImportDialog = true)}>
 						<Upload class="mr-2 h-4 w-4" />
 						นำเข้า JSON
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
-					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive">
+					<DropdownMenu.Item onclick={() => (showDeleteDialog = true)} variant="destructive">
 						<Trash2 class="mr-2 h-4 w-4" />
 						ล้างข้อมูลทั้งหมด
 					</DropdownMenu.Item>
@@ -93,8 +167,12 @@
 
 	<Tabs value="active">
 		<TabsList class="w-full space-x-1">
-			<TabsTrigger value="active" class="flex-1 bg-background">กำลังดำเนิน ({activeGroups.length})</TabsTrigger>
-			<TabsTrigger value="closed" class="flex-1 bg-background">ปิดแล้ว ({closedGroups.length})</TabsTrigger>
+			<TabsTrigger value="active" class="flex-1 bg-background"
+				>กำลังดำเนิน ({activeGroups.length})</TabsTrigger
+			>
+			<TabsTrigger value="closed" class="flex-1 bg-background"
+				>ปิดแล้ว ({closedGroups.length})</TabsTrigger
+			>
 		</TabsList>
 
 		<TabsContent value="active" class="mt-4">
@@ -110,11 +188,7 @@
 			{:else}
 				<div class="space-y-3">
 					{#each activeGroups as group (group.id)}
-						<GroupCard
-							{group}
-							isActive={true}
-							onclick={() => goto(`/groups/${group.id}`)}
-						/>
+						<GroupCard {group} isActive={true} onclick={() => goto(`/groups/${group.id}`)} />
 					{/each}
 				</div>
 			{/if}
@@ -128,11 +202,7 @@
 			{:else}
 				<div class="space-y-3">
 					{#each closedGroups as group (group.id)}
-						<GroupCard
-							{group}
-							isActive={false}
-							onclick={() => goto(`/groups/${group.id}`)}
-						/>
+						<GroupCard {group} isActive={false} onclick={() => goto(`/groups/${group.id}`)} />
 					{/each}
 				</div>
 			{/if}
@@ -170,7 +240,7 @@
 				onclick={handleDeleteAll}
 				variant="destructive"
 				class="w-full md:flex-1"
-				disabled={deleteConfirmText !== 'DELETE'}
+				disabled={deleteConfirmText !== 'DELETE' || isDeleting}
 			>
 				ล้างข้อมูล
 			</Button>
@@ -183,19 +253,17 @@
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>ส่งออก JSON</Dialog.Title>
-			<Dialog.Description>
-				Export ข้อมูลวงแชร์และบันทึกการเงินทั้งหมด
-			</Dialog.Description>
+			<Dialog.Description>Export ข้อมูลวงแชร์และบันทึกการเงินทั้งหมด</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="space-y-4 py-4">
-			<Button onclick={downloadJSON} class="w-full">
+			<Button onclick={downloadJSON} class="w-full" disabled={isExporting}>
 				<Download class="mr-2 h-4 w-4" />
-				Download
+				{isExporting ? 'กำลังดาวน์โหลด...' : 'Download'}
 			</Button>
-			<Button onclick={copyJSON} variant="outline" class="w-full">
+			<Button onclick={copyJSON} variant="outline" class="w-full" disabled={isCopying}>
 				<Copy class="mr-2 h-4 w-4" />
-				Copy to Clipboard
+				{isCopying ? 'กำลังคัดลอก...' : 'Copy to Clipboard'}
 			</Button>
 		</div>
 
@@ -212,15 +280,37 @@
 	<Dialog.Content>
 		<Dialog.Header>
 			<Dialog.Title>นำเข้า JSON</Dialog.Title>
-			<Dialog.Description>
-				Import ข้อมูลวงแชร์และบันทึกการเงินจากไฟล์ JSON
-			</Dialog.Description>
+			<Dialog.Description>Import ข้อมูลวงแชร์และบันทึกการเงินจากไฟล์ JSON</Dialog.Description>
 		</Dialog.Header>
 
 		<div class="space-y-4 py-4">
+			<div class="flex items-center justify-between">
+				<div class="space-y-0.5">
+					<Label for="importMode">โหมดนำเข้า</Label>
+					<p class="text-xs text-muted-foreground">
+						{localImportMode ? 'ทับข้อมูลทั้งหมด' : 'เพิ่ม groups เข้าไป'}
+					</p>
+				</div>
+				<Switch id="importMode" bind:checked={localImportMode} disabled={!dataImport.hasWallet} />
+			</div>
+			{#if !dataImport.hasWallet && dataImport.importJSONText}
+				<p class="text-xs text-muted-foreground">
+					JSON ไม่มีข้อมูล wallet จึงไม่สามารถใช้โหมดทับข้อมูลได้
+				</p>
+			{/if}
+
 			<div class="space-y-2">
 				<Label for="fileUpload">Upload File</Label>
-				<Input id="fileUpload" type="file" accept=".json" onchange={handleFileUpload} />
+				<Input
+					id="fileUpload"
+					type="file"
+					accept=".json"
+					onchange={handleFileUpload}
+					disabled={isImporting}
+				/>
+				{#if isImporting}
+					<p class="text-sm text-muted-foreground">กำลังนำเข้าข้อมูล...</p>
+				{/if}
 			</div>
 
 			<div class="relative">
@@ -242,8 +332,12 @@
 				/>
 			</div>
 
-			<Button onclick={handleImportFromPaste} class="w-full" disabled={!dataImport.importJSONText}>
-				Import from Paste
+			<Button
+				onclick={handleImportFromPaste}
+				class="w-full"
+				disabled={!dataImport.importJSONText || isImportingFromPaste}
+			>
+				{isImportingFromPaste || isImporting ? 'กำลังนำเข้า...' : 'นำเข้าข้อมูล'}
 			</Button>
 		</div>
 
@@ -280,7 +374,9 @@
 						<Button
 							variant="outline"
 							size="sm"
-							class="mt-6 {dataImport.groupsToRemove.has(index) ? 'bg-destructive text-destructive-foreground' : ''}"
+							class="mt-6 {dataImport.groupsToRemove.has(index)
+								? 'text-destructive-foreground bg-destructive'
+								: ''}"
 							onclick={() => {
 								if (dataImport.groupsToRemove.has(index)) {
 									dataImport.groupsToRemove.delete(index);
@@ -297,11 +393,38 @@
 		</div>
 
 		<Dialog.Footer>
+			<Button
+				onclick={handleImportWithRenamedGroups}
+				class="w-full"
+				disabled={isImportingWithRename}
+			>
+				{isImportingWithRename ? 'กำลังนำเข้า...' : 'Import'}
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Replace Confirmation Dialog -->
+<Dialog.Root bind:open={showReplaceConfirmDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>ยืนยันการทับข้อมูล</Dialog.Title>
+			<Dialog.Description>
+				การกระทำนี้จะลบข้อมูลวงแชร์และบันทึกการเงินทั้งหมด แล้วนำเข้าข้อมูลใหม่ ไม่สามารถย้อนกลับได้
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<Dialog.Footer>
 			<Dialog.Close class="flex-1">
 				<Button variant="outline" class="w-full">ยกเลิก</Button>
 			</Dialog.Close>
-			<Button onclick={handleImportWithRenamedGroups} class="w-full md:flex-1">
-				Import
+			<Button
+				onclick={confirmReplaceImport}
+				variant="destructive"
+				class="w-full md:flex-1"
+				disabled={isImporting}
+			>
+				{isImporting ? 'กำลังทับข้อมูล...' : 'ทับข้อมูล'}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

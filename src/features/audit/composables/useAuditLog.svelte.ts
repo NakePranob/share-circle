@@ -44,8 +44,14 @@ export function useAuditLog() {
 	);
 
 	return {
-		manualTransactions,
-		groupTransactions,
-		allTransactions
+		get manualTransactions() {
+			return manualTransactions;
+		},
+		get groupTransactions() {
+			return groupTransactions;
+		},
+		get allTransactions() {
+			return allTransactions;
+		}
 	};
 }
