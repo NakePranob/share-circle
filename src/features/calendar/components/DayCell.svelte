@@ -42,8 +42,8 @@
 	const hasAnyRounds = $derived(
 		(groups.some((group) =>
 			group.isActive &&
-			group.rounds.some((round) => round.date === cell.date)
-			&& startOfDay(new Date(cell.date)) >= startOfDay(new Date())
+			group.rounds.some((round) => round.date === cell.date) &&
+			(startOfDay(new Date(cell.date)) >= startOfDay(new Date()) || hasUnpaid || hasUnreceived)
 		)) ?? false
 	);
 	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);
