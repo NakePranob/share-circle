@@ -64,7 +64,6 @@
 		</div>
 
 		<Dialog.Footer>
-			<Button variant="outline" onclick={onClose}>ยกเลิก</Button>
 			<Button onclick={onSave}>บันทึก</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

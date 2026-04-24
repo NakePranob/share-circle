@@ -10,7 +10,7 @@ class WalletStore {
 	#auth = useAuth();
 	#wallet = $state<Wallet>({
 		initialBalance: 0,
-		manualTransactions: []
+		transactions: []
 	});
 	#loading = $state(false);
 	#isLoaded = $state(false);
@@ -36,7 +36,7 @@ class WalletStore {
 
 			this.#wallet = {
 				initialBalance: data?.initial_balance ?? 0,
-				manualTransactions: transactions.map((t) => ({
+				transactions: transactions.map((t) => ({
 					id: t.id,
 					groupId: t.group_id,
 					roundNumber: t.round_number,
@@ -85,7 +85,8 @@ class WalletStore {
 		amount: number,
 		note = '',
 		groupId: string | null = null,
-		roundNumber: number | null = null
+		roundNumber: number | null = null,
+		date?: string
 	): Promise<void> {
 		if (!this.#auth.userId) throw new Error('Not authenticated');
 		try {
@@ -93,7 +94,7 @@ class WalletStore {
 				user_id: this.#auth.userId,
 				group_id: groupId,
 				round_number: roundNumber,
-				date: toISODate(new SvelteDate()),
+				date: date ?? toISODate(new SvelteDate()),
 				type,
 				amount,
 				is_estimate: false,
@@ -114,7 +115,7 @@ class WalletStore {
 
 			this.#wallet = {
 				...this.#wallet,
-				manualTransactions: [...this.#wallet.manualTransactions, txn]
+				transactions: [...this.#wallet.transactions, txn]
 			};
 		} catch (error) {
 			toast.error('Failed to add transaction');
@@ -127,7 +128,7 @@ class WalletStore {
 			await deleteTransaction(id);
 			this.#wallet = {
 				...this.#wallet,
-				manualTransactions: this.#wallet.manualTransactions.filter((t) => t.id !== id)
+				transactions: this.#wallet.transactions.filter((t) => t.id !== id)
 			};
 		} catch (error) {
 			toast.error('Failed to remove transaction');
@@ -138,7 +139,7 @@ class WalletStore {
 	clearAll(): void {
 		this.#wallet = {
 			initialBalance: 0,
-			manualTransactions: []
+			transactions: []
 		};
 	}
 
@@ -149,7 +150,7 @@ class WalletStore {
 			await deleteWallet(this.#auth.userId);
 			this.#wallet = {
 				initialBalance: 0,
-				manualTransactions: []
+				transactions: []
 			};
 		} catch (error) {
 			toast.error('Failed to delete wallet data');
@@ -164,7 +165,7 @@ class WalletStore {
 			await updateWallet(this.#auth.userId, { initial_balance: 0 });
 			this.#wallet = {
 				initialBalance: 0,
-				manualTransactions: []
+				transactions: []
 			};
 		} catch (error) {
 			toast.error('Failed to clear wallet data');

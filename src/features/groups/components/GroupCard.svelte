@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
+	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Progress } from '$lib/components/ui/progress';
 	import { formatCurrency, formatDate, nextRoundOwe } from '$lib/utils/calculator';
 	import type { Group } from '$features/groups/types';
+	import { cn } from '$lib/utils';
 
 	interface Props {
 		group: Group;
@@ -26,37 +28,45 @@
 	const owe = $derived(nextRoundOwe(group));
 </script>
 
-<button
-	type="button"
+<Card
 	{onclick}
-	class="w-full rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all hover:shadow-md {!isActive ? 'opacity-70 hover:opacity-100' : ''}"
+	class={cn('cursor-pointer', {
+		'opacity-70 hover:opacity-100': !isActive
+	})}
 >
-	<div class="mb-3 flex items-start justify-between">
-		<div>
-			<p class="font-semibold">{group.name}</p>
-			<p class="text-xs text-muted-foreground">
-				{total} มือ · มือเรา: {group.rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber).join(', ')}
-			</p>
+	<CardContent>
+		<div class="mb-3 flex items-start justify-between">
+			<div>
+				<p class="font-semibold">{group.name}</p>
+				<p class="text-xs text-muted-foreground">
+					{total} มือ · มือเรา: {group.rounds
+						.filter((r) => r.isMyRound)
+						.map((r) => r.roundNumber)
+						.join(', ')}
+				</p>
+			</div>
+			{#if !isActive}
+				<Badge variant="outline" class="text-xs">ปิดแล้ว</Badge>
+			{:else}
+				<p class="text-xs text-muted-foreground">{paid}/{total}</p>
+			{/if}
 		</div>
-		{#if !isActive}
-			<Badge variant="outline" class="text-xs">ปิดแล้ว</Badge>
-		{:else}
-			<p class="text-xs text-muted-foreground">{paid}/{total}</p>
-		{/if}
-	</div>
 
-	<Progress value={(paid / total) * 100} class="mb-2 h-1.5" />
+		<Progress value={(paid / total) * 100} class="mb-2 h-1.5" />
 
-	<div class="flex items-center justify-between text-xs text-muted-foreground">
-		{#if isActive && next}
-			<span>{formatDate(next.date)}</span>
-			<span class="{next.isMyRound ? 'text-green-600' : 'text-red-500'} font-medium">
-				{next.isMyRound ? `รับ ${formatCurrency(next.receiveAmount)}` : `จ่าย ${formatCurrency(owe)}`}
-			</span>
-		{:else if !isActive}
-			<span class="text-muted-foreground">ปิดแล้ว</span>
-		{:else}
-			<span class="text-green-600">เสร็จสิ้น</span>
-		{/if}
-	</div>
-</button>
+		<div class="flex items-center justify-between text-xs text-muted-foreground">
+			{#if isActive && next}
+				<span>{formatDate(next.date)}</span>
+				<span class="{next.isMyRound ? 'text-green-600' : 'text-red-500'} font-medium">
+					{next.isMyRound
+						? `รับ ${formatCurrency(next.receiveAmount)}`
+						: `จ่าย ${formatCurrency(owe)}`}
+				</span>
+			{:else if !isActive}
+				<span class="text-muted-foreground">ปิดแล้ว</span>
+			{:else}
+				<span class="text-green-600">เสร็จสิ้น</span>
+			{/if}
+		</div>
+	</CardContent>
+</Card>

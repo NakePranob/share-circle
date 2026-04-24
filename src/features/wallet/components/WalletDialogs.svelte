@@ -23,7 +23,6 @@
 			<Input id="balance" type="number" bind:value={actions.balanceInput} />
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (actions.showBalanceDialog = false)}>ยกเลิก</Button>
 			<Button onclick={actions.saveBalance}>บันทึก</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -46,7 +45,6 @@
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (actions.showDepositDialog = false)}>ยกเลิก</Button>
 			<Button onclick={actions.deposit} disabled={actions.txnAmount <= 0}>เติม</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
@@ -69,7 +67,6 @@
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (actions.showWithdrawDialog = false)}>ยกเลิก</Button>
 			<Button onclick={actions.withdraw} disabled={actions.txnAmount <= 0} variant="destructive">เบิก</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

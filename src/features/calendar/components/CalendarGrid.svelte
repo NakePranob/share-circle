@@ -31,7 +31,7 @@
 </div>
 
 <Card class="p-0 gap-0 overflow-hidden">
-	<div class="grid grid-cols-7 bg-muted/50">
+	<div class="grid grid-cols-7 bg-zinc-200">
 		{#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as dayName (dayName)}
 			<div class="py-2 text-center text-xs font-medium text-muted-foreground">{dayName}</div>
 		{/each}
@@ -61,6 +61,7 @@
 			{/if}
 		{/each}
 	</div>
+	<div class="h-8 bg-zinc-200"></div>
 </Card>
 
 <div class="mt-3 flex gap-4 text-xs text-muted-foreground">

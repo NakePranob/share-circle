@@ -15,7 +15,7 @@
 <Story name="Default">
 	<WalletDialogs
 		actions={{
-			wallet: { initialBalance: 0, manualTransactions: [] },
+			wallet: { initialBalance: 0, transactions: [] },
 			showBalanceDialog: false,
 			showDepositDialog: false,
 			showWithdrawDialog: false,

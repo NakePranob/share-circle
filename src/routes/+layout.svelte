@@ -3,14 +3,24 @@
 	import { goto } from '$app/navigation';
 	import './layout.css';
 
-	import { House, Calendar, Users, History } from '@lucide/svelte';
+	import { House, Calendar, Users, History, Loader2 } from '@lucide/svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { useAppData } from '$features/shared/composables/useAppData.svelte';
 
 	let { children } = $props();
 
 	// Load all app data (groups, wallet) when user is authenticated
-	useAppData();
+	const appData = useAppData();
+
+	// Loading dots animation
+	let loadingDots = $state('.');
+	$effect(() => {
+		if (!appData.loading) return;
+		const interval = setInterval(() => {
+			loadingDots = loadingDots === '...' ? '.' : loadingDots + '.';
+		}, 200);
+		return () => clearInterval(interval);
+	});
 
 	const navItems = [
 		{ href: '/', label: 'หน้าหลัก', icon: House },
@@ -27,7 +37,16 @@
 
 <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
 	<main class="flex-1 pb-20">
-		{@render children()}
+		{#if appData.loading}
+			<div class="flex min-h-screen items-center justify-center">
+				<div class="flex flex-col items-center gap-2 animate-pulse">
+					<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
+					<span class="text-sm text-muted-foreground">Loading{loadingDots}</span>
+				</div>
+			</div>
+		{:else}
+			{@render children()}
+		{/if}
 	</main>
 
 	<nav

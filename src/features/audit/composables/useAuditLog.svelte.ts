@@ -22,7 +22,7 @@ export function useAuditLog() {
 	);
 
 	const allTransactions = $derived(
-		wallet.manualTransactions
+		wallet.transactions
 			.map((t: Transaction) => ({
 				transaction: t,
 				groupName: t.groupId ? (groupMap.get(t.groupId) as string | undefined) : undefined

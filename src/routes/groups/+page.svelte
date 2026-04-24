@@ -233,9 +233,6 @@
 		</div>
 
 		<Dialog.Footer>
-			<Dialog.Close class="flex-1">
-				<Button variant="outline" class="w-full md:flex-1">ยกเลิก</Button>
-			</Dialog.Close>
 			<Button
 				onclick={handleDeleteAll}
 				variant="destructive"
@@ -255,22 +252,15 @@
 			<Dialog.Title>ส่งออก JSON</Dialog.Title>
 			<Dialog.Description>Export ข้อมูลวงแชร์และบันทึกการเงินทั้งหมด</Dialog.Description>
 		</Dialog.Header>
-
-		<div class="space-y-4 py-4">
-			<Button onclick={downloadJSON} class="w-full" disabled={isExporting}>
+		<Dialog.Footer>
+			<Button onclick={downloadJSON} disabled={isExporting}>
 				<Download class="mr-2 h-4 w-4" />
 				{isExporting ? 'กำลังดาวน์โหลด...' : 'Download'}
 			</Button>
-			<Button onclick={copyJSON} variant="outline" class="w-full" disabled={isCopying}>
+			<Button onclick={copyJSON} variant="outline" disabled={isCopying}>
 				<Copy class="mr-2 h-4 w-4" />
 				{isCopying ? 'กำลังคัดลอก...' : 'Copy to Clipboard'}
 			</Button>
-		</div>
-
-		<Dialog.Footer>
-			<Dialog.Close>
-				<Button variant="outline" class="w-full">ปิด</Button>
-			</Dialog.Close>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
@@ -331,7 +321,9 @@
 					class="font-mono text-xs"
 				/>
 			</div>
+		</div>
 
+		<Dialog.Footer>
 			<Button
 				onclick={handleImportFromPaste}
 				class="w-full"
@@ -339,12 +331,6 @@
 			>
 				{isImportingFromPaste || isImporting ? 'กำลังนำเข้า...' : 'นำเข้าข้อมูล'}
 			</Button>
-		</div>
-
-		<Dialog.Footer>
-			<Dialog.Close>
-				<Button variant="outline" class="w-full">ปิด</Button>
-			</Dialog.Close>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
@@ -404,6 +390,40 @@
 	</Dialog.Content>
 </Dialog.Root>
 
+<!-- Transaction Integrity Dialog -->
+<Dialog.Root bind:open={dataImport.showIntegrityDialog}>
+	<Dialog.Content>
+		<Dialog.Header>
+			<Dialog.Title>Transaction ขาดหาย</Dialog.Title>
+			<Dialog.Description>
+				วงต่อไปนี้มีมือ ที่จ่าย/รับแล้ว แต่ไม่มี transaction log:
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<ul class="my-2 space-y-2 rounded-xl bg-secondary p-4">
+			{#each dataImport.groupsWithMissingTxns as name (name)}
+				<li class="flex items-center gap-2 rounded-lg bg-background py-2 px-4 shadow text-sm">
+					<span class="h-1.5 w-1.5 rounded-full bg-destructive"></span>
+					{name}
+				</li>
+			{/each}
+		</ul>
+		<p class="text-sm text-muted-foreground">
+			ถ้ายืนยัน: มือทั้งหมดของวงเหล่านี้จะถูกรีเซ็ตเป็นยังไม่จ่าย/รับ และ transaction
+			ของวงเหล่านี้จะถูกลบออก
+		</p>
+
+		<Dialog.Footer>
+			<Button variant="outline" onclick={() => dataImport.skipIntegrityReset()}>
+				นำเข้าต่อโดยไม่แก้
+			</Button>
+			<Button variant="destructive" onclick={() => dataImport.confirmIntegrityReset()}>
+				ยืนยันรีเซ็ตมือ
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
 <!-- Replace Confirmation Dialog -->
 <Dialog.Root bind:open={showReplaceConfirmDialog}>
 	<Dialog.Content>
@@ -415,9 +435,6 @@
 		</Dialog.Header>
 
 		<Dialog.Footer>
-			<Dialog.Close class="flex-1">
-				<Button variant="outline" class="w-full">ยกเลิก</Button>
-			</Dialog.Close>
 			<Button
 				onclick={confirmReplaceImport}
 				variant="destructive"

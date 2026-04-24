@@ -342,9 +342,6 @@
 		</div>
 
 		<Dialog.Footer>
-			<Dialog.Close class="flex-1">
-				<Button variant="outline" class="w-full md:flex-1">ยกเลิก</Button>
-			</Dialog.Close>
 			<Button onclick={handleConfirmSubmit} class="w-full md:flex-1">ยืนยัน</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

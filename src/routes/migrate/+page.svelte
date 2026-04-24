@@ -55,11 +55,11 @@
 				await getOrCreateWallet(userId);
 
 				// Step 3: Migrate manual transactions
-				if (wallet.manualTransactions && wallet.manualTransactions.length > 0) {
-					message = `Migrate ${wallet.manualTransactions.length} transactions...`;
+				if (wallet.transactions && wallet.transactions.length > 0) {
+					message = `Migrate ${wallet.transactions.length} transactions...`;
 					progress = 40;
 
-					for (const t of wallet.manualTransactions) {
+					for (const t of wallet.transactions) {
 						await createTransaction({
 							user_id: userId,
 							group_id: t.groupId || null,

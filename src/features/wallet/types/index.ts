@@ -14,5 +14,5 @@ export interface Transaction {
 
 export interface Wallet {
 	initialBalance: number;
-	manualTransactions: Transaction[];
+	transactions: Transaction[];
 }

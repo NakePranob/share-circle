@@ -441,7 +441,6 @@ $effect.pre(() => {
 			</div>
 
 			<Dialog.Footer>
-				<Button variant="outline" onclick={() => (editRound = null)}>ยกเลิก</Button>
 				<Button onclick={saveEdit} disabled={isSaving}>
 					{isSaving ? 'กำลังบันทึก...' : 'บันทึก'}
 				</Button>
