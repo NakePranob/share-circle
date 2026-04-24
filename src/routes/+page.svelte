@@ -121,7 +121,6 @@
 					</button>
 					<div
 						class={cn('overflow-hidden p-0 transition-all duration-300 ease-in-out', {
-							'max-h-[2000px]': listOpen,
 							'max-h-0': !listOpen
 						})}
 					>

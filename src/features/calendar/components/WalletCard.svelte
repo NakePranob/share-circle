@@ -27,15 +27,15 @@
 	</CardHeader>
 	<CardContent>
 		<p class="mb-3 text-3xl font-bold {currentBalance()}">{formatCurrency(balance)}</p>
-		<div class="flex gap-2 text-foreground">
-			<Button variant="outline" size="sm" onclick={onSetBalance} class="flex-1">
+		<div class="flex gap-1 text-foreground">
+			<Button variant="outline" size="sm" onclick={onSetBalance} class="flex-1 rounded-e">
 				ตั้งทุน
 			</Button>
-			<Button variant="outline" size="sm" onclick={onDeposit} class="flex-1">
+			<Button variant="outline" size="sm" onclick={onDeposit} class="flex-1 rounded">
 				<Plus class="mr-1 h-3 w-3" />
 				เติม
 			</Button>
-			<Button variant="outline" size="sm" onclick={onWithdraw} class="flex-1">
+			<Button variant="outline" size="sm" onclick={onWithdraw} class="flex-1 rounded-s">
 				<Minus class="mr-1 h-3 w-3" />
 				เบิก
 			</Button>
