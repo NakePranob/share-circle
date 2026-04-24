@@ -2,6 +2,7 @@ import { useAuth } from '$features/auth/composables/useAuth.svelte';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { toast } from 'svelte-sonner';
+import { browser } from '$app/environment';
 
 class AppDataStore {
 	#auth = useAuth();
@@ -54,6 +55,7 @@ export function useAppData() {
 	const auth = useAuth();
 
 	$effect(() => {
+		if (!browser) return;
 		if (auth.userId && !store.isLoaded && !store.loading) {
 			store.loadAllData();
 		} else if (!auth.userId && store.isLoaded) {
