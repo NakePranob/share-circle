@@ -44,6 +44,8 @@ class AppDataStore {
 let appDataInstance: AppDataStore | null = null;
 
 function getAppDataStore(): AppDataStore {
+	// Never cache on server — each SSR request gets a fresh instance
+	if (!browser) return new AppDataStore();
 	if (!appDataInstance) {
 		appDataInstance = new AppDataStore();
 	}
