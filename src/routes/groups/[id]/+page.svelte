@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
@@ -194,7 +195,7 @@ $effect.pre(() => {
 	}
 
 	function downloadGroupJSON() {
-		if (!group) return;
+		if (!browser || !group) return;
 		const json = exportGroupData();
 		const blob = new Blob([json], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -209,7 +210,7 @@ $effect.pre(() => {
 	}
 
 	async function copyGroupJSON() {
-		if (!group) return;
+		if (!browser || !group) return;
 		const json = exportGroupData();
 		await navigator.clipboard.writeText(json);
 		showExportDialog = false;

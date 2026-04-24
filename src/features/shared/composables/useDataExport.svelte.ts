@@ -1,3 +1,4 @@
+import { browser } from '$app/environment';
 import { SvelteDate } from 'svelte/reactivity';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
@@ -20,6 +21,7 @@ export function useDataExport() {
 	}
 
 	function downloadJSON(filename?: string) {
+		if (!browser) return;
 		const json = exportData();
 		const blob = new Blob([json], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
@@ -33,6 +35,7 @@ export function useDataExport() {
 	}
 
 	async function copyJSON() {
+		if (!browser) return;
 		const json = exportData();
 		await navigator.clipboard.writeText(json);
 	}

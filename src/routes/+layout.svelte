@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import './layout.css';
@@ -8,6 +9,11 @@
 	import { useAppData } from '$features/shared/composables/useAppData.svelte';
 
 	let { children } = $props();
+
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
 
 	// Load all app data (groups, wallet) when user is authenticated
 	const appData = useAppData();
@@ -37,7 +43,7 @@
 
 <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
 	<main class="flex-1 pb-20">
-		{#if appData.loading}
+		{#if !mounted || appData.loading}
 			<div class="flex min-h-screen items-center justify-center">
 				<div class="flex flex-col items-center gap-2 animate-pulse">
 					<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
