@@ -4,39 +4,25 @@ import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
 import type { Session, User } from '@supabase/supabase-js';
 
+// Module-level state — shared across all useAuth() instances
+let session = $state<Session | null>(null);
+let user = $state<User | null>(null);
+
+// Bootstrap once per app lifetime
+if (browser) {
+	supabase.auth.getSession().then(({ data: { session: s } }) => {
+		session = s;
+		user = s?.user ?? null;
+	});
+
+	supabase.auth.onAuthStateChange((_event, newSession) => {
+		session = newSession;
+		user = newSession?.user ?? null;
+	});
+}
+
 export function useAuth() {
 	let loading = $state(false);
-	let session = $state<Session | null>(null);
-	let user = $state<User | null>(null);
-
-	// Initialize auth state
-	async function initAuth() {
-		if (!browser) return;
-		const {
-			data: { session: currentSession }
-		} = await supabase.auth.getSession();
-		session = currentSession;
-		user = currentSession?.user ?? null;
-	}
-
-	// Initialize auth on first render
-	$effect.pre(() => {
-		if (browser) {
-			initAuth();
-		}
-	});
-
-	// Listen for auth changes - use $effect.root to run only once
-	$effect.root(() => {
-		if (!browser) return;
-
-		const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-			session = newSession;
-			user = newSession?.user ?? null;
-		});
-
-		return () => subscription.unsubscribe();
-	});
 
 	async function signUp(email: string, password: string) {
 		loading = true;
