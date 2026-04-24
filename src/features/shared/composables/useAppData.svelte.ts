@@ -3,56 +3,63 @@ import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { toast } from 'svelte-sonner';
 
-// Module-level state (shared across all instances)
-let loading = $state(false);
-let isLoaded = $state(false);
+class AppDataStore {
+	#auth = useAuth();
+	#groupsStore = useGroupsStore();
+	#walletStore = useWalletStore();
+	#loading = $state(false);
+	#isLoaded = $state(false);
 
-/**
- * Composable สำหรับจัดการการ load ข้อมูลเริ่มต้นทั้งหมดของ app
- * เป็นจุดเดียวที่ load groups (พร้อม rounds) และ wallet
- * เรียกใช้ใน +layout.svelte เพื่อ load ข้อมูลเมื่อ user auth แล้ว
- */
-export function useAppData() {
-	const auth = useAuth();
-	const groupsStore = useGroupsStore();
-	const walletStore = useWalletStore();
+	get loading() {
+		return this.#loading;
+	}
 
-	// Load all data when user is authenticated
-	$effect(() => {
-		if (auth.userId && !isLoaded && !loading) {
-			loadAllData();
-		} else if (!auth.userId && isLoaded) {
-			// Reset when user logs out
-			isLoaded = false;
-			groupsStore.clearAll();
-			walletStore.clearAll();
-		}
-	});
+	get isLoaded() {
+		return this.#isLoaded;
+	}
 
-	async function loadAllData() {
-		if (!auth.userId || loading) return;
-		loading = true;
+	async loadAllData() {
+		if (!this.#auth.userId || this.#loading) return;
+		this.#loading = true;
 		try {
-			// Load groups (includes rounds)
-			await groupsStore.loadGroups();
-			// Load wallet
-			await walletStore.loadWallet();
-			isLoaded = true;
+			await this.#groupsStore.loadGroups();
+			await this.#walletStore.loadWallet();
+			this.#isLoaded = true;
 		} catch (error) {
 			toast.error('Failed to load data');
 			console.error('Failed to load app data:', error);
 		} finally {
-			loading = false;
+			this.#loading = false;
 		}
 	}
 
-	return {
-		get loading() {
-			return loading;
-		},
-		get isLoaded() {
-			return isLoaded;
-		},
-		loadAllData
-	};
+	reset() {
+		this.#isLoaded = false;
+		this.#groupsStore.clearAll();
+		this.#walletStore.clearAll();
+	}
+}
+
+let appDataInstance: AppDataStore | null = null;
+
+function getAppDataStore(): AppDataStore {
+	if (!appDataInstance) {
+		appDataInstance = new AppDataStore();
+	}
+	return appDataInstance;
+}
+
+export function useAppData() {
+	const store = getAppDataStore();
+	const auth = useAuth();
+
+	$effect(() => {
+		if (auth.userId && !store.isLoaded && !store.loading) {
+			store.loadAllData();
+		} else if (!auth.userId && store.isLoaded) {
+			store.reset();
+		}
+	});
+
+	return store;
 }

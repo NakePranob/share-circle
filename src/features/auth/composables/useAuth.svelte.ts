@@ -4,20 +4,22 @@ import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
 import type { Session, User } from '@supabase/supabase-js';
 
-// Module-level state — shared across all useAuth() instances
-let session = $state<Session | null>(null);
-let user = $state<User | null>(null);
+// Module-level state — use object so reassignment stays within the same reference
+const authState = $state<{ session: Session | null; user: User | null }>({
+	session: null,
+	user: null
+});
 
 // Bootstrap once per app lifetime
 if (browser) {
 	supabase.auth.getSession().then(({ data: { session: s } }) => {
-		session = s;
-		user = s?.user ?? null;
+		authState.session = s;
+		authState.user = s?.user ?? null;
 	});
 
 	supabase.auth.onAuthStateChange((_event, newSession) => {
-		session = newSession;
-		user = newSession?.user ?? null;
+		authState.session = newSession;
+		authState.user = newSession?.user ?? null;
 	});
 }
 
@@ -105,16 +107,16 @@ export function useAuth() {
 			return loading;
 		},
 		get user() {
-			return user;
+			return authState.user;
 		},
 		get session() {
-			return session;
+			return authState.session;
 		},
 		get isAuthenticated() {
-			return !!user;
+			return !!authState.user;
 		},
 		get userId() {
-			return user?.id;
+			return authState.user?.id;
 		},
 		signUp,
 		signIn,

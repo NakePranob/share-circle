@@ -14,24 +14,32 @@ import type { Group, Round, RoundStatus, PayoutStatus } from '$features/groups/t
 import { toast } from 'svelte-sonner';
 import { SvelteDate } from 'svelte/reactivity';
 
-// Module-level state (shared across all instances)
-let groups = $state<Group[]>([]);
-let loading = $state(false);
-let isLoaded = $state(false);
+class GroupsStore {
+	#auth = useAuth();
+	#groups = $state<Group[]>([]);
+	#loading = $state(false);
+	#isLoaded = $state(false);
 
-export function useGroupsStore() {
-	const auth = useAuth();
+	get groups() {
+		return this.#groups;
+	}
 
-	async function loadGroups() {
-		if (!auth.userId || loading) return;
-		loading = true;
+	get loading() {
+		return this.#loading;
+	}
+
+	get isLoaded() {
+		return this.#isLoaded;
+	}
+
+	async loadGroups() {
+		if (!this.#auth.userId || this.#loading) return;
+		this.#loading = true;
 		try {
-			const data = await getGroups(auth.userId);
+			const data = await getGroups(this.#auth.userId);
 
-			// Load all rounds for the user
-			const roundsData = await getRoundsByUserId(auth.userId);
+			const roundsData = await getRoundsByUserId(this.#auth.userId);
 
-			// Group rounds by group_id using object
 			const roundsByGroupId: Record<string, Round[]> = {};
 			roundsData.forEach((r) => {
 				const round: Round = {
@@ -53,8 +61,7 @@ export function useGroupsStore() {
 				roundsByGroupId[r.group_id].push(round);
 			});
 
-			// Transform Supabase data to app format with rounds
-			groups = data.map((g) => ({
+			this.#groups = data.map((g) => ({
 				id: g.id,
 				name: g.name,
 				rounds: roundsByGroupId[g.id] || [],
@@ -63,25 +70,24 @@ export function useGroupsStore() {
 				managementFeePerRound: undefined
 			}));
 
-			isLoaded = true;
+			this.#isLoaded = true;
 		} catch (error) {
 			toast.error('Failed to load groups');
 			console.error(error);
 		} finally {
-			loading = false;
+			this.#loading = false;
 		}
 	}
 
-	async function add(group: Omit<Group, 'id' | 'createdAt'>): Promise<Group> {
-		if (!auth.userId) throw new Error('Not authenticated');
+	async add(group: Omit<Group, 'id' | 'createdAt'>): Promise<Group> {
+		if (!this.#auth.userId) throw new Error('Not authenticated');
 		try {
 			const data = await createGroup({
-				user_id: auth.userId,
+				user_id: this.#auth.userId,
 				name: group.name,
 				is_active: group.isActive ?? true
 			});
 
-			// Create rounds if provided
 			if (group.rounds && group.rounds.length > 0) {
 				const roundsToInsert = group.rounds.map((round) => ({
 					group_id: data.id,
@@ -99,7 +105,6 @@ export function useGroupsStore() {
 				try {
 					await createRounds(roundsToInsert);
 				} catch (error) {
-					// Compensate: group ถูกสร้างแล้วแต่ rounds ล้มเหลว → ลบ orphan group
 					await deleteGroup(data.id).catch((e) => {
 						console.error('Compensation deleteGroup failed for group', data.id, e);
 					});
@@ -114,7 +119,7 @@ export function useGroupsStore() {
 				createdAt: data.created_at ?? '',
 				isActive: data.is_active ?? true
 			};
-			groups = [...groups, newGroup];
+			this.#groups = [...this.#groups, newGroup];
 			return newGroup;
 		} catch (error) {
 			toast.error('Failed to create group');
@@ -122,42 +127,40 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function update(id: string, updates: Partial<Group>): Promise<void> {
+	async update(id: string, updates: Partial<Group>): Promise<void> {
 		try {
 			await updateGroup(id, {
 				name: updates.name,
 				is_active: updates.isActive
 			});
-			groups = groups.map((g) => (g.id === id ? { ...g, ...updates } : g));
+			this.#groups = this.#groups.map((g) => (g.id === id ? { ...g, ...updates } : g));
 		} catch (error) {
 			toast.error('Failed to update group');
 			throw error;
 		}
 	}
 
-	async function remove(id: string): Promise<void> {
+	async remove(id: string): Promise<void> {
 		try {
 			await deleteGroup(id);
-			groups = groups.filter((g) => g.id !== id);
+			this.#groups = this.#groups.filter((g) => g.id !== id);
 		} catch (error) {
 			toast.error('Failed to delete group');
 			throw error;
 		}
 	}
 
-	function getById(id: string): Group | undefined {
-		return groups.find((g) => g.id === id);
+	getById(id: string): Group | undefined {
+		return this.#groups.find((g) => g.id === id);
 	}
 
-	function loadGroupWithRounds(id: string): void {
-		const group = groups.find((g) => g.id === id);
+	loadGroupWithRounds(id: string): void {
+		const group = this.#groups.find((g) => g.id === id);
 		if (!group) return;
 
-		// Always load rounds to ensure data is fresh
-		loadRoundsForGroup(id)
+		this.loadRoundsForGroup(id)
 			.then((rounds) => {
-				// Update the group in the array with rounds
-				groups = groups.map((g) => (g.id === id ? { ...g, rounds } : g));
+				this.#groups = this.#groups.map((g) => (g.id === id ? { ...g, rounds } : g));
 			})
 			.catch((error) => {
 				toast.error('Failed to load rounds');
@@ -165,7 +168,7 @@ export function useGroupsStore() {
 			});
 	}
 
-	async function loadRoundsForGroup(groupId: string): Promise<Round[]> {
+	async loadRoundsForGroup(groupId: string): Promise<Round[]> {
 		try {
 			const data = await getRounds(groupId);
 			return data.map((r) => ({
@@ -186,24 +189,18 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function updateRound(
-		groupId: string,
-		roundNumber: number,
-		partial: Partial<Round>
-	): Promise<void> {
-		const group = groups.find((g) => g.id === groupId);
+	async updateRound(groupId: string, roundNumber: number, partial: Partial<Round>): Promise<void> {
+		const group = this.#groups.find((g) => g.id === groupId);
 		if (!group) return;
 
 		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		if (!round) return;
 
 		try {
-			// Find the actual round ID from Supabase
 			const rounds = await getRounds(groupId);
 			const supabaseRound = rounds.find((r) => r.round_number === roundNumber);
 			if (!supabaseRound) return;
 
-			// Update in Supabase
 			const updates: RoundUpdate = {};
 			if (partial.date !== undefined) updates.date = partial.date;
 			if (partial.paymentAmount !== undefined) updates.payment_amount = partial.paymentAmount;
@@ -212,8 +209,7 @@ export function useGroupsStore() {
 
 			await updateRoundInSupabase(supabaseRound.id, updates);
 
-			// Update local state
-			groups = groups.map((g) => {
+			this.#groups = this.#groups.map((g) => {
 				if (g.id === groupId) {
 					return {
 						...g,
@@ -233,16 +229,14 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function markRoundPaid(groupId: string, roundNumber: number): Promise<void> {
-		// Find the round in the group
-		const group = groups.find((g) => g.id === groupId);
+	async markRoundPaid(groupId: string, roundNumber: number): Promise<void> {
+		const group = this.#groups.find((g) => g.id === groupId);
 		if (!group) return;
 
 		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		if (!round) return;
 
 		try {
-			// Need to find the actual round ID from Supabase
 			const rounds = await getRounds(groupId);
 			const supabaseRound = rounds.find((r) => r.round_number === roundNumber);
 			if (!supabaseRound) return;
@@ -256,8 +250,8 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function markRoundPending(groupId: string, roundNumber: number): Promise<void> {
-		const group = groups.find((g) => g.id === groupId);
+	async markRoundPending(groupId: string, roundNumber: number): Promise<void> {
+		const group = this.#groups.find((g) => g.id === groupId);
 		if (!group) return;
 
 		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
@@ -277,8 +271,8 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function markRoundReceived(groupId: string, roundNumber: number): Promise<void> {
-		const group = groups.find((g) => g.id === groupId);
+	async markRoundReceived(groupId: string, roundNumber: number): Promise<void> {
+		const group = this.#groups.find((g) => g.id === groupId);
 		if (!group) return;
 
 		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
@@ -298,8 +292,8 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function markRoundReceivedPending(groupId: string, roundNumber: number): Promise<void> {
-		const group = groups.find((g) => g.id === groupId);
+	async markRoundReceivedPending(groupId: string, roundNumber: number): Promise<void> {
+		const group = this.#groups.find((g) => g.id === groupId);
 		if (!group) return;
 
 		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
@@ -319,8 +313,8 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function toggleActive(id: string): Promise<void> {
-		const group = groups.find((g) => g.id === id);
+	async toggleActive(id: string): Promise<void> {
+		const group = this.#groups.find((g) => g.id === id);
 		if (!group) return;
 
 		try {
@@ -332,57 +326,36 @@ export function useGroupsStore() {
 		}
 	}
 
-	async function toggleMyRound(_groupId: string, _roundNumber: number): Promise<void> {
-		// This requires updating the round in Supabase
+	async toggleMyRound(_groupId: string, _roundNumber: number): Promise<void> {
 		toast.info('Toggle my round not fully implemented yet');
 	}
 
-	async function removeMyRound(_groupId: string, _roundNumber: number): Promise<void> {
-		// This requires updating the round in Supabase
+	async removeMyRound(_groupId: string, _roundNumber: number): Promise<void> {
 		toast.info('Remove my round not fully implemented yet');
 	}
 
-	function clearAll(): void {
-		groups = [];
+	clearAll(): void {
+		this.#groups = [];
 	}
 
-	async function deleteAll(): Promise<void> {
-		if (!auth.userId) throw new Error('Not authenticated');
+	async deleteAll(): Promise<void> {
+		if (!this.#auth.userId) throw new Error('Not authenticated');
 		try {
-			await deleteAllGroups(auth.userId);
-			groups = [];
+			await deleteAllGroups(this.#auth.userId);
+			this.#groups = [];
 		} catch (error) {
 			toast.error('Failed to delete all groups');
 			throw error;
 		}
 	}
+}
 
-	return {
-		get groups() {
-			return groups;
-		},
-		get loading() {
-			return loading;
-		},
-		get isLoaded() {
-			return isLoaded;
-		},
-		loadGroups,
-		getById,
-		loadGroupWithRounds,
-		add,
-		update,
-		remove,
-		clearAll,
-		deleteAll,
-		loadRoundsForGroup,
-		updateRound,
-		markRoundPaid,
-		markRoundPending,
-		markRoundReceived,
-		markRoundReceivedPending,
-		toggleActive,
-		toggleMyRound,
-		removeMyRound
-	};
+// Singleton instance
+let groupsStoreInstance: GroupsStore | null = null;
+
+export function useGroupsStore(): GroupsStore {
+	if (!groupsStoreInstance) {
+		groupsStoreInstance = new GroupsStore();
+	}
+	return groupsStoreInstance;
 }
