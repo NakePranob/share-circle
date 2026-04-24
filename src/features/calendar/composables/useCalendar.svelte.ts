@@ -64,7 +64,7 @@ export function useCalendar() {
 	}
 
 	function clickDay(dateStr: string) {
-		const data = cashFlow.get(dateStr);
+		const data = projectedCashFlow.get(dateStr);
 		if (data) {
 			selectedDay = data;
 		} else {

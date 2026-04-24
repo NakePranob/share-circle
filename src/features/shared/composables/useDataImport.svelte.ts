@@ -1,7 +1,9 @@
 import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
+import { TRANSACTION_TYPE } from '$features/wallet/types';
 import type { TransactionType } from '$features/wallet/types';
+import { ROUND_STATUS, PAYOUT_STATUS } from '$features/groups/types';
 import type { Round } from '$features/groups/types';
 
 type ImportGroup = Omit<
@@ -26,15 +28,15 @@ function checkTransactionIntegrity(
 	for (const group of groups) {
 		const groupTxns = transactions.filter((t) => t.groupId === group.id);
 		const hasMissing = group.rounds.some((round) => {
-			if (round.status === 'paid') {
+			if (round.status === ROUND_STATUS.PAID) {
 				const has = groupTxns.some(
-					(t) => t.roundNumber === round.roundNumber && t.type === 'payment'
+					(t) => t.roundNumber === round.roundNumber && t.type === TRANSACTION_TYPE.PAYMENT
 				);
 				if (!has) return true;
 			}
-			if (round.isMyRound && round.payoutStatus === 'received') {
+			if (round.isMyRound && round.payoutStatus === PAYOUT_STATUS.RECEIVED) {
 				const has = groupTxns.some(
-					(t) => t.roundNumber === round.roundNumber && t.type === 'payout'
+					(t) => t.roundNumber === round.roundNumber && t.type === TRANSACTION_TYPE.PAYOUT
 				);
 				if (!has) return true;
 			}
@@ -130,9 +132,9 @@ export class DataImport {
 			if (!missingSet.has(group.name)) continue;
 			group.rounds = group.rounds.map((r) => ({
 				...r,
-				status: 'pending' as const,
+				status: ROUND_STATUS.PENDING,
 				paidAt: undefined,
-				payoutStatus: 'pending' as const,
+				payoutStatus: PAYOUT_STATUS.PENDING,
 				receivedAt: undefined
 			}));
 		}

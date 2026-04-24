@@ -1,6 +1,7 @@
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { toast } from 'svelte-sonner';
 import { TOAST_MESSAGES, ERROR_MESSAGES } from '$features/wallet/constants';
+import { TRANSACTION_TYPE } from '$features/wallet/types';
 
 export function useWalletActions() {
 	const walletStore = useWalletStore();
@@ -24,7 +25,7 @@ export function useWalletActions() {
 			toast.error(ERROR_MESSAGES.INVALID_AMOUNT);
 			return;
 		}
-		await walletStore.addTransaction('deposit', txnAmount, txnNote);
+		await walletStore.addTransaction(TRANSACTION_TYPE.DEPOSIT, txnAmount, txnNote);
 		await walletStore.adjustBalance(+txnAmount);
 		toast.success('เติมเงินเรียบร้อย');
 		showDepositDialog = false;
@@ -37,7 +38,7 @@ export function useWalletActions() {
 			toast.error(ERROR_MESSAGES.INVALID_AMOUNT);
 			return;
 		}
-		await walletStore.addTransaction('withdrawal', txnAmount, txnNote);
+		await walletStore.addTransaction(TRANSACTION_TYPE.WITHDRAWAL, txnAmount, txnNote);
 		await walletStore.adjustBalance(-txnAmount);
 		toast.success(TOAST_MESSAGES.WITHDRAW);
 		showWithdrawDialog = false;

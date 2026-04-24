@@ -93,6 +93,13 @@ $effect.pre(() => {
 			await groupsStore.markRoundPending(group.id, roundNumber);
 			if (round) {
 				await walletStore.adjustBalance(+round.paymentAmount);
+				// ลบ transaction ที่เกี่ยวข้อง
+				const paymentTxn = walletStore.wallet.transactions.find(
+					(t) => t.groupId === group.id && t.roundNumber === roundNumber && t.type === 'payment'
+				);
+				if (paymentTxn) {
+					await walletStore.removeTransaction(paymentTxn.id);
+				}
 			}
 			toast.success('ย้อนกลับเป็นรอแล้ว');
 		} catch (error) {
@@ -124,6 +131,13 @@ $effect.pre(() => {
 			if (round) {
 				const net = round.receiveAmount - (round.managementFee ?? 0);
 				await walletStore.adjustBalance(-net);
+				// ลบ transaction ที่เกี่ยวข้อง
+				const payoutTxn = walletStore.wallet.transactions.find(
+					(t) => t.groupId === group.id && t.roundNumber === roundNumber && t.type === 'payout'
+				);
+				if (payoutTxn) {
+					await walletStore.removeTransaction(payoutTxn.id);
+				}
 			}
 			toast.success('ย้อนกลับเป็นรอแล้ว');
 		} catch (error) {

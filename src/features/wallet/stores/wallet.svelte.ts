@@ -147,28 +147,41 @@ class WalletStore {
 		if (!this.#auth.userId) throw new Error('Not authenticated');
 		try {
 			await deleteAllTransactions(this.#auth.userId);
-			await deleteWallet(this.#auth.userId);
+			try {
+				await deleteWallet(this.#auth.userId);
+			} catch {
+				await deleteWallet(this.#auth.userId); // retry ครั้งเดียว
+			}
 			this.#wallet = {
 				initialBalance: 0,
 				transactions: []
 			};
 		} catch (error) {
-			toast.error('Failed to delete wallet data');
+			toast.error('ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่');
 			throw error;
 		}
 	}
 
 	async clearAndReset(): Promise<void> {
 		if (!this.#auth.userId) throw new Error('Not authenticated');
+		const prevBalance = this.#wallet.initialBalance;
 		try {
 			await deleteAllTransactions(this.#auth.userId);
-			await updateWallet(this.#auth.userId, { initial_balance: 0 });
+			try {
+				await updateWallet(this.#auth.userId, { initial_balance: 0 });
+			} catch (error) {
+				// Transactions ลบไปแล้ว แต่ balance ยังเป็นค่าเดิม → พยายาม restore
+				await updateWallet(this.#auth.userId, { initial_balance: prevBalance }).catch((e) => {
+					console.error('Failed to restore wallet balance after clearAndReset failure', e);
+				});
+				throw error;
+			}
 			this.#wallet = {
 				initialBalance: 0,
 				transactions: []
 			};
 		} catch (error) {
-			toast.error('Failed to clear wallet data');
+			toast.error('รีเซ็ตกระเป๋าไม่สำเร็จ กรุณาลองใหม่');
 			throw error;
 		}
 	}

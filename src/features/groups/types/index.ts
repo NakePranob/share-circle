@@ -1,5 +1,14 @@
-export type RoundStatus = 'pending' | 'paid';
-export type PayoutStatus = 'pending' | 'received';
+export const ROUND_STATUS = {
+	PENDING: 'pending',
+	PAID: 'paid'
+} as const;
+export type RoundStatus = typeof ROUND_STATUS[keyof typeof ROUND_STATUS];
+
+export const PAYOUT_STATUS = {
+	PENDING: 'pending',
+	RECEIVED: 'received'
+} as const;
+export type PayoutStatus = typeof PAYOUT_STATUS[keyof typeof PAYOUT_STATUS];
 
 export interface Round {
 	roundNumber: number;

@@ -1,5 +1,7 @@
 import { supabase } from './client';
 import type { Database } from './database.types';
+import { ROUND_STATUS, PAYOUT_STATUS } from '$features/groups/types';
+import type { RoundStatus, PayoutStatus } from '$features/groups/types';
 
 export type Round = Database['public']['Tables']['rounds']['Row'];
 export type RoundInsert = Database['public']['Tables']['rounds']['Insert'];
@@ -78,10 +80,10 @@ export async function deleteRound(id: string) {
 	if (error) throw error;
 }
 
-export async function updateRoundStatus(id: string, status: 'pending' | 'paid') {
+export async function updateRoundStatus(id: string, status: RoundStatus) {
 	const { data, error } = await supabase
 		.from('rounds')
-		.update({ status, paid_at: status === 'paid' ? new Date().toISOString() : null })
+		.update({ status, paid_at: status === ROUND_STATUS.PAID ? new Date().toISOString() : null })
 		.eq('id', id)
 		.select()
 		.single();
@@ -90,10 +92,10 @@ export async function updateRoundStatus(id: string, status: 'pending' | 'paid') 
 	return data;
 }
 
-export async function updatePayoutStatus(id: string, payoutStatus: 'pending' | 'received') {
+export async function updatePayoutStatus(id: string, payoutStatus: PayoutStatus) {
 	const { data, error } = await supabase
 		.from('rounds')
-		.update({ payout_status: payoutStatus, received_at: payoutStatus === 'received' ? new Date().toISOString() : null })
+		.update({ payout_status: payoutStatus, received_at: payoutStatus === PAYOUT_STATUS.RECEIVED ? new Date().toISOString() : null })
 		.eq('id', id)
 		.select()
 		.single();

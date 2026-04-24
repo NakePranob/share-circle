@@ -27,7 +27,7 @@
 		}
 		toast.success(TOAST_MESSAGES.MARK_AS_PAID);
 		if (calendar.selectedDay) {
-			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
+			calendar.selectedDay = calendar.projectedCashFlow.get(calendar.selectedDay.date) ?? null;
 		}
 	}
 
@@ -41,7 +41,7 @@
 		}
 		toast.success(TOAST_MESSAGES.MARK_AS_RECEIVED);
 		if (calendar.selectedDay) {
-			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
+			calendar.selectedDay = calendar.projectedCashFlow.get(calendar.selectedDay.date) ?? null;
 		}
 	}
 
@@ -77,7 +77,6 @@
 <DaySheet
 	selectedDay={calendar.selectedDay}
 	open={sheetOpen}
-	paidCashFlow={calendar.paidCashFlow}
 	groups={groupsStore.groups}
 	onClose={() => { sheetOpen = false; setTimeout(() => { calendar.selectedDay = null; }, 300); }}
 	onMarkAsPaid={markAsPaid}

@@ -1,4 +1,10 @@
-export type TransactionType = 'payment' | 'payout' | 'deposit' | 'withdrawal';
+export const TRANSACTION_TYPE = {
+	PAYMENT: 'payment',
+	PAYOUT: 'payout',
+	DEPOSIT: 'deposit',
+	WITHDRAWAL: 'withdrawal'
+} as const;
+export type TransactionType = typeof TRANSACTION_TYPE[keyof typeof TRANSACTION_TYPE];
 
 export interface Transaction {
 	id: string;

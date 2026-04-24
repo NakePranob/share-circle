@@ -1,4 +1,6 @@
+import { ROUND_STATUS, PAYOUT_STATUS } from '$features/groups/types';
 import type { Group } from '$features/groups/types';
+import { TRANSACTION_TYPE } from '$features/wallet/types';
 import type { Transaction, Wallet } from '$features/wallet/types';
 import type { DayData } from '$features/calendar/types';
 import { formatCurrency } from '$features/shared/utils';
@@ -15,7 +17,7 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 				groupId: group.id,
 				roundNumber: round.roundNumber,
 				date: round.date,
-				type: 'payment',
+				type: TRANSACTION_TYPE.PAYMENT,
 				amount: round.paymentAmount,
 				isEstimate: false,
 				note: `${group.name} มือ ${round.roundNumber}`
@@ -29,10 +31,10 @@ function syntheticTransactions(groups: Group[]): Transaction[] {
 					groupId: group.id,
 					roundNumber: round.roundNumber,
 					date: round.date,
-					type: 'payout',
+					type: TRANSACTION_TYPE.PAYOUT,
 					amount: round.receiveAmount - fee,
 					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
+					note: `${group.name} มือ ${round.roundNumber} • รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}
@@ -48,7 +50,7 @@ function paidTransactions(groups: Group[]): Transaction[] {
 		if (!group.isActive) continue;
 
 		for (const round of group.rounds) {
-			if (round.status === 'paid') {
+			if (round.status === ROUND_STATUS.PAID) {
 				const paidAt = round.paidAt ?? round.date;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payment-paid`,
@@ -56,14 +58,14 @@ function paidTransactions(groups: Group[]): Transaction[] {
 					roundNumber: round.roundNumber,
 					date: paidAt.slice(0, 10),
 					actionAt: paidAt,
-					type: 'payment',
+					type: TRANSACTION_TYPE.PAYMENT,
 					amount: round.paymentAmount,
 					isEstimate: false,
 					note: `${group.name} มือ ${round.roundNumber}`
 				});
 			}
 
-			if (round.isMyRound && round.payoutStatus === 'received') {
+			if (round.isMyRound && round.payoutStatus === PAYOUT_STATUS.RECEIVED) {
 				const receivedAt = round.receivedAt ?? round.date;
 				const fee = round.managementFee ?? 0;
 				txns.push({
@@ -72,10 +74,10 @@ function paidTransactions(groups: Group[]): Transaction[] {
 					roundNumber: round.roundNumber,
 					date: receivedAt.slice(0, 10),
 					actionAt: receivedAt,
-					type: 'payout',
+					type: TRANSACTION_TYPE.PAYOUT,
 					amount: round.receiveAmount - fee,
 					isEstimate: false,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
+					note: `${group.name} มือ ${round.roundNumber} • รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}
@@ -91,30 +93,30 @@ function pendingTransactions(groups: Group[]): Transaction[] {
 		if (!group.isActive) continue;
 
 		for (const round of group.rounds) {
-			if (round.status !== 'paid') {
+			if (round.status !== ROUND_STATUS.PAID) {
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payment`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
 					date: round.date,
-					type: 'payment',
+					type: TRANSACTION_TYPE.PAYMENT,
 					amount: round.paymentAmount,
 					isEstimate: true,
 					note: `${group.name} มือ ${round.roundNumber}`
 				});
 			}
 
-			if (round.isMyRound && round.payoutStatus !== 'received') {
+			if (round.isMyRound && round.payoutStatus !== PAYOUT_STATUS.RECEIVED) {
 				const fee = round.managementFee ?? 0;
 				txns.push({
 					id: `${group.id}-${round.roundNumber}-payout`,
 					groupId: group.id,
 					roundNumber: round.roundNumber,
 					date: round.date,
-					type: 'payout',
+					type: TRANSACTION_TYPE.PAYOUT,
 					amount: round.receiveAmount - fee,
 					isEstimate: true,
-					note: `${group.name} มือ ${round.roundNumber} — รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
+					note: `${group.name} มือ ${round.roundNumber} • รับเงิน${fee > 0 ? ` (หักค่าดูแล ${formatCurrency(fee)})` : ''}`
 				});
 			}
 		}
@@ -150,16 +152,7 @@ function buildDayMap(
 
 	// Start from current live balance — no need to accumulate past transactions
 	let balance = wallet.initialBalance;
-
-	// overdue pending transactions (date < monthPrefix) → apply to balance and show on day 1
-	const firstDayStr = `${monthPrefix}-01`;
-	const firstDay = dayMap.get(firstDayStr)!;
-	for (const entry of allEntries) {
-		if (entry.transaction.date >= monthPrefix) break;
-		const { type, amount } = entry.transaction;
-		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
-		firstDay.transactions.push(entry);
-	}
+	// const todayStr = new Date().toISOString().slice(0, 10);
 
 	for (let d = 1; d <= daysInMonth; d++) {
 		const dateStr = `${monthPrefix}-${String(d).padStart(2, '0')}`;
@@ -168,8 +161,11 @@ function buildDayMap(
 		for (const entry of allEntries) {
 			if (entry.transaction.date !== dateStr) continue;
 			day.transactions.push(entry);
-			const { type, amount } = entry.transaction;
-			balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
+			// only accumulate balance from today onwards — past is baked into initialBalance
+			// if (dateStr >= todayStr ) {
+				const { type, amount } = entry.transaction;
+				balance += type === TRANSACTION_TYPE.PAYMENT || type === TRANSACTION_TYPE.WITHDRAWAL ? -amount : amount;
+			// }
 		}
 
 		day.balance = balance;
@@ -215,7 +211,7 @@ export function getUpcomingPayments(
 		if (!group.isActive) continue;
 
 		for (const round of group.rounds) {
-			if (round.status === 'paid') continue;
+			if (round.status === ROUND_STATUS.PAID) continue;
 			const roundDate = new Date(round.date);
 			roundDate.setHours(0, 0, 0, 0);
 			if (roundDate <= future) {
@@ -244,7 +240,7 @@ export function getUpcomingPayouts(
 	for (const group of groups) {
 		if (!group.isActive) continue;
 		for (const round of group.rounds) {
-			if (round.isMyRound && round.payoutStatus !== 'received') {
+			if (round.isMyRound && round.payoutStatus !== PAYOUT_STATUS.RECEIVED) {
 				const roundDate = new Date(round.date);
 				roundDate.setHours(0, 0, 0, 0);
 				if (roundDate <= future) {

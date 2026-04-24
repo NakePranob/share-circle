@@ -3,14 +3,14 @@ import { getGroups, createGroup, updateGroup, deleteGroup, deleteAllGroups } fro
 import {
 	getRounds,
 	getRoundsByUserId,
-	createRound,
 	createRounds,
 	updateRound as updateRoundInSupabase,
 	updateRoundStatus,
 	updatePayoutStatus,
 	type RoundUpdate
 } from '$lib/supabase/rounds';
-import type { Group, Round } from '$features/groups/types';
+import { ROUND_STATUS, PAYOUT_STATUS } from '$features/groups/types';
+import type { Group, Round, RoundStatus, PayoutStatus } from '$features/groups/types';
 import { toast } from 'svelte-sonner';
 import { SvelteDate } from 'svelte/reactivity';
 
@@ -39,9 +39,9 @@ export function useGroupsStore() {
 					date: r.date,
 					paymentAmount: r.payment_amount,
 					receiveAmount: r.receive_amount,
-					status: (r.status ?? 'pending') as 'pending' | 'paid',
+					status: (r.status ?? ROUND_STATUS.PENDING) as RoundStatus,
 					paidAt: r.paid_at ?? undefined,
-					payoutStatus: (r.payout_status ?? 'pending') as 'pending' | 'received',
+					payoutStatus: (r.payout_status ?? PAYOUT_STATUS.PENDING) as PayoutStatus,
 					receivedAt: r.received_at ?? undefined,
 					isMyRound: r.is_my_round ?? false,
 					managementFee: r.management_fee ?? 0
@@ -89,14 +89,22 @@ export function useGroupsStore() {
 					date: round.date,
 					payment_amount: round.paymentAmount,
 					receive_amount: round.receiveAmount,
-					status: round.status ?? 'pending',
+					status: round.status ?? ROUND_STATUS.PENDING,
 					paid_at: round.paidAt ?? null,
-					payout_status: round.payoutStatus ?? 'pending',
+					payout_status: round.payoutStatus ?? PAYOUT_STATUS.PENDING,
 					received_at: round.receivedAt ?? null,
 					is_my_round: round.isMyRound ?? false,
 					management_fee: round.managementFee ?? 0
 				}));
-				await createRounds(roundsToInsert);
+				try {
+					await createRounds(roundsToInsert);
+				} catch (error) {
+					// Compensate: group ถูกสร้างแล้วแต่ rounds ล้มเหลว → ลบ orphan group
+					await deleteGroup(data.id).catch((e) => {
+						console.error('Compensation deleteGroup failed for group', data.id, e);
+					});
+					throw error;
+				}
 			}
 
 			const newGroup: Group = {
@@ -165,9 +173,9 @@ export function useGroupsStore() {
 				date: r.date,
 				paymentAmount: r.payment_amount,
 				receiveAmount: r.receive_amount,
-				status: (r.status ?? 'pending') as 'pending' | 'paid',
+				status: (r.status ?? ROUND_STATUS.PENDING) as RoundStatus,
 				paidAt: r.paid_at ?? undefined,
-				payoutStatus: (r.payout_status ?? 'pending') as 'pending' | 'received',
+				payoutStatus: (r.payout_status ?? PAYOUT_STATUS.PENDING) as PayoutStatus,
 				receivedAt: r.received_at ?? undefined,
 				isMyRound: r.is_my_round ?? false,
 				managementFee: r.management_fee ?? 0

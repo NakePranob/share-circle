@@ -1,12 +1,14 @@
 import { SvelteDate } from 'svelte/reactivity';
+import { ROUND_STATUS } from '$features/groups/types';
 import type { Group, Round } from '$features/groups/types';
+import { PLAY_MODE } from '$features/groups/schemas/groupFormSchema';
 import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
 
 export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 	const result: Round[] = [];
 
 	const basePayments =
-		data.playMode === 'fixed'
+		data.playMode === PLAY_MODE.FIXED
 			? Array.from({ length: data.totalRounds }, () => data.fixedPaymentAmount ?? 0)
 			: (data.steppedPayments ?? []);
 
@@ -27,7 +29,7 @@ export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 			isMyRound,
 			managementFee: isMyRound && fee > 0 ? fee : undefined,
 			roundNumber: i + 1,
-			status: 'pending'
+			status: ROUND_STATUS.PENDING
 		});
 	}
 	return result;
@@ -42,7 +44,7 @@ export function iOweForRound(group: Group, roundNumber: number): number {
 
 /** Payment amount for the next unpaid round (used for display/preview) */
 export function nextRoundOwe(group: Group): number {
-	const next = group.rounds.find((r) => r.status !== 'paid');
+	const next = group.rounds.find((r) => r.status !== ROUND_STATUS.PAID);
 	return next?.paymentAmount ?? 0;
 }
 
@@ -64,9 +66,9 @@ export function totalIOwe(group: Group): number {
 }
 
 export function paidCount(group: Group): number {
-	return group.rounds.filter((r) => r.status === 'paid').length;
+	return group.rounds.filter((r) => r.status === ROUND_STATUS.PAID).length;
 }
 
 export function nextRound(group: Group): Round | undefined {
-	return group.rounds.find((r) => r.status !== 'paid');
+	return group.rounds.find((r) => r.status !== ROUND_STATUS.PAID);
 }

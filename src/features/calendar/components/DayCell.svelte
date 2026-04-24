@@ -47,6 +47,14 @@
 		)) ?? false
 	);
 	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);
+	
+	$inspect('cell.date', cell.date);
+	$inspect('hasAnyRounds', hasAnyRounds);
+	$inspect('!hasUnpaid', !hasUnpaid);
+	$inspect('!hasUnreceived', !hasUnreceived);
+	$inspect('__________________');
+
+	const isPastOrToday = $derived(new Date(cell.date) >= startOfDay(new Date()));
 </script>
 
 <button
@@ -61,7 +69,10 @@
 	</span>
 	{#if hasAnyRounds}
 		<p class="mt-0.5 text-[9px] leading-tight {isNegative ? 'text-red-500 font-bold' : 'text-muted-foreground'}">
-			{!allDone ? formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '') : ''}
+			{!allDone 
+				? formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '') 
+				: ''
+			}
 		</p>
 		<div class="mt-1 flex gap-0.5">
 			{#if hasUnpaid}
@@ -70,7 +81,7 @@
 			{#if hasUnreceived}
 				<span class="h-1.5 w-1.5 rounded-full bg-green-400"></span>
 			{/if}
-			{#if allDone}
+			{#if allDone && isPastOrToday}
 				<span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
 			{/if}
 		</div>

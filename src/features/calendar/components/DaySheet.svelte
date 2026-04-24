@@ -9,14 +9,13 @@
 	interface Props {
 		selectedDay: DayData | null;
 		open: boolean;
-		paidCashFlow: Map<string, DayData>;
 		groups: Group[];
 		onClose: () => void;
 		onMarkAsPaid: (groupId: string, roundNumber: number) => void;
 		onMarkAsReceived: (groupId: string, roundNumber: number) => void;
 	}
 
-	let { selectedDay, open, paidCashFlow, groups, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
+	let { selectedDay, open, groups, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
 
 	const groupTransactions = $derived(
 		selectedDay?.transactions.filter((t) => t.transaction.groupId && t.transaction.roundNumber) ?? []
@@ -46,9 +45,8 @@
 		</Sheet.Header>
 
 		{#if selectedDay}
-			{@const paidDayData = paidCashFlow.get(selectedDay.date)}
-			{@const displayBalance = paidDayData?.balance ?? 0}
-			{@const isNegative = paidDayData?.hasNegativeBalance ?? false}
+			{@const displayBalance = selectedDay.balance}
+			{@const isNegative = selectedDay.hasNegativeBalance}
 			<div class="mt-4 space-y-2 overflow-y-auto pb-8 px-4">
 				<div class="mb-4 flex items-center justify-between rounded-lg bg-muted/50 p-3">
 					<span class="text-sm">ยอดคงเหลือ</span>
