@@ -25,6 +25,7 @@ export function useWalletActions() {
 			return;
 		}
 		await walletStore.addTransaction('deposit', txnAmount, txnNote);
+		await walletStore.adjustBalance(+txnAmount);
 		toast.success('เติมเงินเรียบร้อย');
 		showDepositDialog = false;
 		txnAmount = 0;
@@ -37,6 +38,7 @@ export function useWalletActions() {
 			return;
 		}
 		await walletStore.addTransaction('withdrawal', txnAmount, txnNote);
+		await walletStore.adjustBalance(-txnAmount);
 		toast.success(TOAST_MESSAGES.WITHDRAW);
 		showWithdrawDialog = false;
 		txnAmount = 0;

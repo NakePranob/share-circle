@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { useCalendar } from '$features/calendar/composables';
 	import { useWalletActions } from '$features/wallet/composables';
 	import WalletCard from '$features/calendar/components/WalletCard.svelte';
@@ -12,20 +13,32 @@
 	import { TOAST_MESSAGES } from '$features/calendar/constants';
 
 	const walletActions = useWalletActions();
+	const walletStore = useWalletStore();
 	const calendar = useCalendar();
 
 	let sheetOpen = $state(false);
 
-	function markAsPaid(groupId: string, roundNumber: number) {
-		groupsStore.markRoundPaid(groupId, roundNumber);
+	async function markAsPaid(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
+		await groupsStore.markRoundPaid(groupId, roundNumber);
+		if (round) {
+			await walletStore.adjustBalance(-round.paymentAmount);
+			await walletStore.addTransaction('payment', round.paymentAmount, '', groupId, roundNumber);
+		}
 		toast.success(TOAST_MESSAGES.MARK_AS_PAID);
 		if (calendar.selectedDay) {
 			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
 		}
 	}
 
-	function markAsReceived(groupId: string, roundNumber: number) {
-		groupsStore.markRoundReceived(groupId, roundNumber);
+	async function markAsReceived(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
+		await groupsStore.markRoundReceived(groupId, roundNumber);
+		if (round) {
+			const net = round.receiveAmount - (round.managementFee ?? 0);
+			await walletStore.adjustBalance(+net);
+			await walletStore.addTransaction('payout', net, '', groupId, roundNumber);
+		}
 		toast.success(TOAST_MESSAGES.MARK_AS_RECEIVED);
 		if (calendar.selectedDay) {
 			calendar.selectedDay = calendar.cashFlow.get(calendar.selectedDay.date) ?? null;
@@ -33,8 +46,7 @@
 	}
 
 	function currentBalance() {
-		const todayData = calendar.paidCashFlow.get(calendar.todayStr);
-		return todayData?.balance ?? walletActions.wallet.initialBalance;
+		return walletActions.wallet.initialBalance;
 	}
 </script>
 

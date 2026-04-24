@@ -2,9 +2,11 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { formatCurrency, formatDate } from '$features/shared/utils';
 
 	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
 	import { useGroupStats, useGroupSummary } from '$features/groups/composables';
 	import { calculateRoundProfit, getMyRoundNumbers } from '$features/groups/utils/formatters';
 	import { toast } from 'svelte-sonner';
@@ -71,8 +73,13 @@ $effect.pre(() => {
 
 	async function markPaid(roundNumber: number) {
 		if (!group) return;
+		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
 			await groupsStore.markRoundPaid(group.id, roundNumber);
+			if (round) {
+				await walletStore.adjustBalance(-round.paymentAmount);
+				await walletStore.addTransaction('payment', round.paymentAmount, '', group.id, roundNumber);
+			}
 			toast.success('บันทึกแล้ว');
 		} catch (error) {
 			console.error('Failed to mark as paid:', error);
@@ -81,8 +88,12 @@ $effect.pre(() => {
 
 	async function markPending(roundNumber: number) {
 		if (!group) return;
+		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
 			await groupsStore.markRoundPending(group.id, roundNumber);
+			if (round) {
+				await walletStore.adjustBalance(+round.paymentAmount);
+			}
 			toast.success('ย้อนกลับเป็นรอแล้ว');
 		} catch (error) {
 			console.error('Failed to mark as pending:', error);
@@ -91,8 +102,14 @@ $effect.pre(() => {
 
 	async function markReceived(roundNumber: number) {
 		if (!group) return;
+		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
 			await groupsStore.markRoundReceived(group.id, roundNumber);
+			if (round) {
+				const net = round.receiveAmount - (round.managementFee ?? 0);
+				await walletStore.adjustBalance(+net);
+				await walletStore.addTransaction('payout', net, '', group.id, roundNumber);
+			}
 			toast.success('บันทึกแล้ว');
 		} catch (error) {
 			console.error('Failed to mark as received:', error);
@@ -101,8 +118,13 @@ $effect.pre(() => {
 
 	async function markReceivedPending(roundNumber: number) {
 		if (!group) return;
+		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
 			await groupsStore.markRoundReceivedPending(group.id, roundNumber);
+			if (round) {
+				const net = round.receiveAmount - (round.managementFee ?? 0);
+				await walletStore.adjustBalance(-net);
+			}
 			toast.success('ย้อนกลับเป็นรอแล้ว');
 		} catch (error) {
 			console.error('Failed to mark as received pending:', error);

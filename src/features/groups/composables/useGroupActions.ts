@@ -1,18 +1,29 @@
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 import { toast } from 'svelte-sonner';
 import type { Round } from '$features/groups/types';
 import { TOAST_MESSAGES } from '$features/groups/constants';
 
 const groupsStore = useGroupsStore();
+const walletStore = useWalletStore();
 
 export function useGroupActions() {
 	async function markAsPaid(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
 		await groupsStore.markRoundPaid(groupId, roundNumber);
+		if (round) {
+			await walletStore.adjustBalance(-round.paymentAmount);
+			await walletStore.addTransaction('payment', round.paymentAmount, '', groupId, roundNumber);
+		}
 		toast.success(TOAST_MESSAGES.PAID);
 	}
 
 	async function markAsPending(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
 		await groupsStore.markRoundPending(groupId, roundNumber);
+		if (round) {
+			await walletStore.adjustBalance(+round.paymentAmount);
+		}
 		toast.success(TOAST_MESSAGES.STATUS_CHANGED);
 	}
 

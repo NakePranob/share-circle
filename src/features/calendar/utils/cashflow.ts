@@ -125,6 +125,9 @@ function pendingTransactions(groups: Group[]): Transaction[] {
 
 export { paidTransactions };
 
+// Under Option A, wallet.initialBalance is always the current live balance.
+// buildDayMap only projects future (pending) transactions forward from initialBalance.
+// Manual transactions and paid group rounds are already baked into initialBalance — do not re-include them.
 function buildDayMap(
 	txns: Transaction[],
 	wallet: Wallet,
@@ -141,24 +144,20 @@ function buildDayMap(
 		dayMap.set(dateStr, { date: dateStr, balance: 0, transactions: [], hasNegativeBalance: false });
 	}
 
-	const allEntries: Array<{ transaction: Transaction; groupName?: string }> = [
-		...wallet.manualTransactions.map((t) => ({ transaction: t })),
-		...txns.map((t) => ({ transaction: t, groupName: t.groupId ? groupMap.get(t.groupId) : undefined }))
-	].sort((a, b) => a.transaction.date.localeCompare(b.transaction.date));
+	const allEntries: Array<{ transaction: Transaction; groupName?: string }> = txns
+		.map((t) => ({ transaction: t, groupName: t.groupId ? groupMap.get(t.groupId) : undefined }))
+		.sort((a, b) => a.transaction.date.localeCompare(b.transaction.date));
 
+	// Start from current live balance — no need to accumulate past transactions
 	let balance = wallet.initialBalance;
-	for (const entry of allEntries) {
-		if (entry.transaction.date >= monthPrefix) break;
-		const { type, amount } = entry.transaction;
-		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
-	}
 
-	// overdue pending transactions (date < monthPrefix) → show on day 1
+	// overdue pending transactions (date < monthPrefix) → apply to balance and show on day 1
 	const firstDayStr = `${monthPrefix}-01`;
 	const firstDay = dayMap.get(firstDayStr)!;
 	for (const entry of allEntries) {
 		if (entry.transaction.date >= monthPrefix) break;
-		if (!entry.transaction.isEstimate) continue; // only pending (carry-over already counted above)
+		const { type, amount } = entry.transaction;
+		balance += type === 'payment' || type === 'withdrawal' ? -amount : amount;
 		firstDay.transactions.push(entry);
 	}
 
@@ -180,14 +179,15 @@ function buildDayMap(
 	return dayMap;
 }
 
-export function buildPaidCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
-	const groupMap = new Map(groups.map((g) => [g.id, g.name]));
-	return buildDayMap(paidTransactions(groups), wallet, year, month, groupMap);
-}
-
+// Projected = pending rounds only, applied forward from current initialBalance
 export function buildProjectedCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
 	const groupMap = new Map(groups.map((g) => [g.id, g.name]));
-	return buildDayMap([...paidTransactions(groups), ...pendingTransactions(groups)], wallet, year, month, groupMap);
+	return buildDayMap(pendingTransactions(groups), wallet, year, month, groupMap);
+}
+
+// paidCashFlow kept for backwards compatibility with DaySheet — returns same as projected
+export function buildPaidCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
+	return buildProjectedCashFlow(groups, wallet, year, month);
 }
 
 export function buildCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {

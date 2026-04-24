@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
+	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { formatCurrency, formatDate, thaiDateToday } from '$features/shared/utils';
 
 	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -45,8 +47,13 @@
 	let paymentSheetOpen = $state(false);
 	let listOpen = $state(true);
 
-	function markAsPaid(groupId: string, roundNumber: number) {
-		groupsStore.markRoundPaid(groupId, roundNumber);
+	async function markAsPaid(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
+		await groupsStore.markRoundPaid(groupId, roundNumber);
+		if (round) {
+			await walletStore.adjustBalance(-round.paymentAmount);
+			await walletStore.addTransaction('payment', round.paymentAmount, '', groupId, roundNumber);
+		}
 		toast.success('จ่ายเงินเรียบร้อย');
 		paymentSheetOpen = false;
 		setTimeout(() => {
@@ -54,8 +61,14 @@
 		}, 300);
 	}
 
-	function markAsReceived(groupId: string, roundNumber: number) {
-		groupsStore.markRoundReceived(groupId, roundNumber);
+	async function markAsReceived(groupId: string, roundNumber: number) {
+		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
+		await groupsStore.markRoundReceived(groupId, roundNumber);
+		if (round) {
+			const net = round.receiveAmount - (round.managementFee ?? 0);
+			await walletStore.adjustBalance(+net);
+			await walletStore.addTransaction('payout', net, '', groupId, roundNumber);
+		}
 		toast.success('รับเงินเรียบร้อย');
 		paymentSheetOpen = false;
 		setTimeout(() => {
@@ -210,9 +223,9 @@
 						{@const progressValue = progress(group)}
 						<Card
 							onclick={() => goto(`/groups/${group.id}`)}
-							class="w-full rounded-lg border border-border p-3 text-left transition-colors hover:bg-muted/50"
+							class="w-full py-4 text-left transition-colors hover:bg-muted/50"
 						>
-							<CardContent class="px-2">
+							<CardContent class="">
 								<div class="mb-2 flex items-center justify-between">
 									<p class="font-medium">{group.name}</p>
 									<p class="text-xs text-muted-foreground">{paid}/{total} มือ</p>
