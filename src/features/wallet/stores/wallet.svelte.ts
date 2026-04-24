@@ -91,7 +91,6 @@ class WalletStore {
 		try {
 			const data = await createTransaction({
 				user_id: this.#auth.userId,
-				wallet_id: null,
 				group_id: groupId,
 				round_number: roundNumber,
 				date: toISODate(new SvelteDate()),

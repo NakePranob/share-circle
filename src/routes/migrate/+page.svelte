@@ -52,8 +52,7 @@
 				message = 'Migrate wallet...';
 				progress = 30;
 
-				const walletRecord = await getOrCreateWallet(userId);
-				if (!walletRecord) throw new Error('ไม่พบ wallet หลังจาก create');
+				await getOrCreateWallet(userId);
 
 				// Step 3: Migrate manual transactions
 				if (wallet.manualTransactions && wallet.manualTransactions.length > 0) {
@@ -63,7 +62,6 @@
 					for (const t of wallet.manualTransactions) {
 						await createTransaction({
 							user_id: userId,
-							wallet_id: walletRecord.id,
 							group_id: t.groupId || null,
 							round_number: t.roundNumber || null,
 							date: t.date,

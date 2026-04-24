@@ -54,7 +54,6 @@ CREATE TABLE wallets (
 CREATE TABLE transactions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) NOT NULL,
-  wallet_id UUID REFERENCES wallets(id) ON DELETE CASCADE,
   group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
   round_number INTEGER,
   date DATE NOT NULL,
@@ -71,7 +70,6 @@ CREATE INDEX idx_rounds_group_id ON rounds(group_id);
 CREATE INDEX idx_rounds_date ON rounds(date);
 CREATE INDEX idx_wallets_user_id ON wallets(user_id);
 CREATE INDEX idx_transactions_user_id ON transactions(user_id);
-CREATE INDEX idx_transactions_wallet_id ON transactions(wallet_id);
 CREATE INDEX idx_transactions_group_id ON transactions(group_id);
 CREATE INDEX idx_transactions_date ON transactions(date);
 

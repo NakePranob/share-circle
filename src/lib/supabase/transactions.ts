@@ -5,7 +5,7 @@ export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 export type TransactionUpdate = Database['public']['Tables']['transactions']['Update'];
 
-export async function getTransactions(userId: string, options?: { groupId?: string; walletId?: string; limit?: number }) {
+export async function getTransactions(userId: string, options?: { groupId?: string; limit?: number }) {
 	let query = supabase
 		.from('transactions')
 		.select('*')
@@ -14,9 +14,6 @@ export async function getTransactions(userId: string, options?: { groupId?: stri
 
 	if (options?.groupId) {
 		query = query.eq('group_id', options.groupId);
-	}
-	if (options?.walletId) {
-		query = query.eq('wallet_id', options.walletId);
 	}
 	if (options?.limit) {
 		query = query.limit(options.limit);

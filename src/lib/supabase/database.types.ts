@@ -112,7 +112,6 @@ export type Database = {
           round_number: number | null
           type: string
           user_id: string
-          wallet_id: string | null
         }
         Insert: {
           amount: number
@@ -125,7 +124,6 @@ export type Database = {
           round_number?: number | null
           type: string
           user_id: string
-          wallet_id?: string | null
         }
         Update: {
           amount?: number
@@ -138,7 +136,6 @@ export type Database = {
           round_number?: number | null
           type?: string
           user_id?: string
-          wallet_id?: string | null
         }
         Relationships: [
           {
@@ -146,13 +143,6 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "transactions_wallet_id_fkey"
-            columns: ["wallet_id"]
-            isOneToOne: false
-            referencedRelation: "wallets"
             referencedColumns: ["id"]
           },
         ]
