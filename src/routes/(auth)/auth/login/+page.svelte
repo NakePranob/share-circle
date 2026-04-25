@@ -48,7 +48,7 @@
 </script>
 
 {#if isInLineApp}
-	<div class="fixed left-0 top-0 flex w-screen h-screen items-center justify-center">
+	<div class="fixed left-0 top-0 bg-background flex w-screen h-screen items-center justify-center">
 		<div class="flex flex-col items-center gap-2 animate-pulse">
 			<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
 			<span class="text-sm text-muted-foreground">Loading{loadingDots}</span>
