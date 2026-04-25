@@ -26,70 +26,29 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	const { userId: lineUid, displayName, pictureUrl }: LineProfile = await lineRes.json();
 
-	const { data: existingProfile } = await adminSupabase
-		.from('line_profiles')
-		.select('user_id')
-		.eq('line_uid', lineUid)
-		.maybeSingle();
+	const syntheticEmail = `line_${lineUid}@line.sharecircle.local`;
 
-	let userId: string;
-
-	if (!existingProfile) {
-		const syntheticEmail = `line_${lineUid}@line.sharecircle.local`;
-		const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
-			email: syntheticEmail,
-			email_confirm: true,
-			user_metadata: {
-				display_name: displayName,
-				picture_url: pictureUrl ?? null,
-				provider: 'line',
-				line_uid: lineUid
-			}
-		});
-
-		if (createError) {
-			if (createError.code === 'email_exists') {
-				const { data: users } = await adminSupabase.auth.admin.listUsers();
-				const existing = users?.users.find((u) => u.email === syntheticEmail);
-				if (!existing) {
-					console.error('Failed to find existing user by email');
-					error(500, 'Failed to create user');
-				}
-				userId = existing.id;
-			} else {
-				console.error('Failed to create user:', createError);
-				error(500, 'Failed to create user');
-			}
-		} else if (!newUser.user) {
-			error(500, 'Failed to create user');
-		} else {
-			userId = newUser.user.id;
-		}
-	} else {
-		userId = existingProfile.user_id;
-	}
-
-	await adminSupabase.from('line_profiles').upsert(
-		{
-			user_id: userId,
-			line_uid: lineUid,
+	// Create user if not exists — ignore email_exists (idempotent)
+	const { error: createError } = await adminSupabase.auth.admin.createUser({
+		email: syntheticEmail,
+		email_confirm: true,
+		user_metadata: {
 			display_name: displayName,
 			picture_url: pictureUrl ?? null,
-			updated_at: new Date().toISOString()
-		},
-		{ onConflict: 'line_uid' }
-	);
+			provider: 'line',
+			line_uid: lineUid
+		}
+	});
 
-	// Generate a magic link for the user's synthetic email, then immediately
-	// exchange the hashed_token for a real session — no email is ever sent.
-	const { data: existingUser } = await adminSupabase.auth.admin.getUserById(userId);
-	if (!existingUser.user) {
-		error(500, 'User not found after creation');
+	if (createError && createError.code !== 'email_exists') {
+		console.error('Failed to create user:', createError);
+		error(500, 'Failed to create user');
 	}
 
+	// Generate session — works for both new and existing users
 	const { data: linkData, error: linkError } = await adminSupabase.auth.admin.generateLink({
 		type: 'magiclink',
-		email: existingUser.user.email!
+		email: syntheticEmail
 	});
 
 	if (linkError || !linkData.properties.hashed_token) {
@@ -106,6 +65,19 @@ export const POST: RequestHandler = async ({ request }) => {
 		console.error('Failed to verify OTP:', sessionError);
 		error(500, 'Failed to create session');
 	}
+
+	// Upsert line_profiles using userId from session (no extra lookup needed)
+	const userId = sessionData.session.user.id;
+	await adminSupabase.from('line_profiles').upsert(
+		{
+			user_id: userId,
+			line_uid: lineUid,
+			display_name: displayName,
+			picture_url: pictureUrl ?? null,
+			updated_at: new Date().toISOString()
+		},
+		{ onConflict: 'line_uid' }
+	);
 
 	return json({
 		access_token: sessionData.session.access_token,
