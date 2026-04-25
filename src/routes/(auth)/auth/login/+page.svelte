@@ -13,7 +13,7 @@
 	let email = $state('');
 	let password = $state('');
 	let liffReady = $state(false);
-	let isInLineApp = $state(false);
+	let isInLineApp = $state(true);
 
 	// Loading dots animation
 	let loadingDots = $state('.');
