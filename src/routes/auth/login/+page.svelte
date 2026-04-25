@@ -83,11 +83,7 @@
 				disabled={auth.loading || !liffReady}
 				onclick={() => auth.signInWithLine()}
 			>
-				{#if isInLineApp}
-					เข้าสู่ระบบด้วย LINE
-				{:else}
-					เข้าสู่ระบบด้วย LINE
-				{/if}
+				เข้าสู่ระบบด้วย LINE
 			</Button>
 
 			<p class="mt-4 text-center text-sm text-muted-foreground">
