@@ -6,6 +6,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import liff from '@line/liff';
+	import { Loader2 } from '@lucide/svelte';
 
 	const auth = useAuth();
 
@@ -13,6 +14,16 @@
 	let password = $state('');
 	let liffReady = $state(false);
 	let isInLineApp = $state(false);
+
+	// Loading dots animation
+	let loadingDots = $state('.');
+	$effect(() => {
+		if (!auth.loading) return;
+		const interval = setInterval(() => {
+			loadingDots = loadingDots === '...' ? '.' : loadingDots + '.';
+		}, 200);
+		return () => clearInterval(interval);
+	});
 
 	onMount(async () => {
 		try {
@@ -35,6 +46,15 @@
 		await auth.signIn(email, password);
 	}
 </script>
+
+{#if isInLineApp}
+	<div class="fixed left-0 top-0 flex w-screen h-screen items-center justify-center">
+		<div class="flex flex-col items-center gap-2 animate-pulse">
+			<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
+			<span class="text-sm text-muted-foreground">Loading{loadingDots}</span>
+		</div>
+	</div>
+{/if}
 
 <div class="flex min-h-screen items-center justify-center p-4">
 	<Card class="w-full max-w-md">
