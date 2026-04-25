@@ -47,12 +47,24 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 		});
 
-		if (createError || !newUser.user) {
-			console.error('Failed to create user:', createError);
+		if (createError) {
+			if (createError.code === 'email_exists') {
+				const { data: users } = await adminSupabase.auth.admin.listUsers();
+				const existing = users?.users.find((u) => u.email === syntheticEmail);
+				if (!existing) {
+					console.error('Failed to find existing user by email');
+					error(500, 'Failed to create user');
+				}
+				userId = existing.id;
+			} else {
+				console.error('Failed to create user:', createError);
+				error(500, 'Failed to create user');
+			}
+		} else if (!newUser.user) {
 			error(500, 'Failed to create user');
+		} else {
+			userId = newUser.user.id;
 		}
-
-		userId = newUser.user.id;
 	} else {
 		userId = existingProfile.user_id;
 	}
@@ -65,7 +77,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			picture_url: pictureUrl ?? null,
 			updated_at: new Date().toISOString()
 		},
-		{ onConflict: 'user_id' }
+		{ onConflict: 'line_uid' }
 	);
 
 	// Generate a magic link for the user's synthetic email, then immediately
