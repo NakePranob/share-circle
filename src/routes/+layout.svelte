@@ -7,6 +7,7 @@
 	import { House, Calendar, Users, History, Loader2 } from '@lucide/svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { useAppData } from '$features/shared/composables/useAppData.svelte';
+	import { useAuth } from '$features/auth/composables/useAuth.svelte';
 
 	let { children } = $props();
 
@@ -17,6 +18,7 @@
 
 	// Load all app data (groups, wallet) when user is authenticated
 	const appData = useAppData();
+	const auth = useAuth();
 
 	// Loading dots animation
 	let loadingDots = $state('.');
@@ -26,6 +28,16 @@
 			loadingDots = loadingDots === '...' ? '.' : loadingDots + '.';
 		}, 200);
 		return () => clearInterval(interval);
+	});
+
+	// Redirect to login if not authenticated
+	$effect(() => {
+		if (auth.isReady && !auth.isAuthenticated) {
+			const isAuthPage = page.url.pathname.startsWith('/auth');
+			if (!isAuthPage) {
+				goto('/auth/login');
+			}
+		}
 	});
 
 	const navItems = [
@@ -43,7 +55,7 @@
 
 <div class="mx-auto flex min-h-screen max-w-2xl flex-col">
 	<main class="flex-1 pb-20">
-		{#if !mounted || appData.loading}
+		{#if !mounted || !auth.isReady || appData.loading || (auth.isAuthenticated && !appData.isLoaded)}
 			<div class="flex min-h-screen items-center justify-center">
 				<div class="flex flex-col items-center gap-2 animate-pulse">
 					<Loader2 class="h-10 w-10 animate-spin text-lime-600" />

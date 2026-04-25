@@ -3,11 +3,13 @@ import { toast } from 'svelte-sonner';
 import { goto } from '$app/navigation';
 import { browser } from '$app/environment';
 import type { Session, User } from '@supabase/supabase-js';
+import liff from '@line/liff';
 
 // Module-level state — use object so reassignment stays within the same reference
-const authState = $state<{ session: Session | null; user: User | null }>({
+const authState = $state<{ session: Session | null; user: User | null; ready: boolean }>({
 	session: null,
-	user: null
+	user: null,
+	ready: false
 });
 
 // Bootstrap once per app lifetime
@@ -15,11 +17,13 @@ if (browser) {
 	supabase.auth.getSession().then(({ data: { session: s } }) => {
 		authState.session = s;
 		authState.user = s?.user ?? null;
+		authState.ready = true;
 	});
 
 	supabase.auth.onAuthStateChange((_event, newSession) => {
 		authState.session = newSession;
 		authState.user = newSession?.user ?? null;
+		authState.ready = true;
 	});
 }
 
@@ -102,6 +106,50 @@ export function useAuth() {
 		}
 	}
 
+	async function signInWithLine() {
+		loading = true;
+		try {
+			const liffId = import.meta.env.VITE_LINE_LIFF_ID;
+			if (!liffId) throw new Error('LIFF ID not configured');
+
+			if (!liff.ready) {
+				await liff.init({ liffId });
+			}
+
+			if (!liff.isLoggedIn()) {
+				liff.login();
+				return { success: false };
+			}
+
+			const lineAccessToken = liff.getAccessToken();
+			if (!lineAccessToken) throw new Error('ไม่พบ LINE access token');
+
+			const res = await fetch('/api/auth/line/callback', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ lineAccessToken })
+			});
+
+			if (!res.ok) {
+				const errBody = await res.json().catch(() => ({}));
+				throw new Error(errBody.message ?? 'LINE login failed');
+			}
+
+			const { access_token, refresh_token } = await res.json();
+			const { error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
+			if (setErr) throw setErr;
+
+			toast.success('เข้าสู่ระบบด้วย LINE สำเร็จ');
+			goto('/');
+			return { success: true };
+		} catch (err) {
+			toast.error(err instanceof Error ? err.message : 'เข้าสู่ระบบด้วย LINE ไม่สำเร็จ');
+			return { success: false, error: err };
+		} finally {
+			loading = false;
+		}
+	}
+
 	return {
 		get loading() {
 			return loading;
@@ -115,12 +163,16 @@ export function useAuth() {
 		get isAuthenticated() {
 			return !!authState.user;
 		},
+		get isReady() {
+			return authState.ready;
+		},
 		get userId() {
 			return authState.user?.id;
 		},
 		signUp,
 		signIn,
 		signOut,
-		resetPassword
+		resetPassword,
+		signInWithLine
 	};
 }

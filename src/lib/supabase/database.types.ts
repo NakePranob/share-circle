@@ -147,6 +147,44 @@ export type Database = {
           },
         ]
       }
+      line_profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          id: string
+          line_uid: string
+          picture_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          line_uid: string
+          picture_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          line_uid?: string
+          picture_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallets: {
         Row: {
           created_at: string | null

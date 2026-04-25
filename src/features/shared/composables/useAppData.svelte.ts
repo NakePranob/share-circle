@@ -58,9 +58,10 @@ export function useAppData() {
 
 	$effect(() => {
 		if (!browser) return;
-		if (auth.userId && !store.isLoaded && !store.loading) {
+		const userId = auth.userId;
+		if (userId && !store.isLoaded && !store.loading) {
 			store.loadAllData();
-		} else if (!auth.userId && store.isLoaded) {
+		} else if (!userId && store.isLoaded) {
 			store.reset();
 		}
 	});
