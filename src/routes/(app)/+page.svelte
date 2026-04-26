@@ -33,6 +33,14 @@
 	// Check if data is loaded
 	const dataLoaded = $derived(groupsStore.isLoaded);
 
+	// Filter overdue rounds
+	const overdueRounds = $derived(
+		upcomingRounds.flatRounds.filter(
+			({ payment, payout }) =>
+				(payment && payment.daysUntil < 0) || (payout && payout.daysUntil < 0)
+		)
+	);
+
 	import type { Round } from '$features/groups/types';
 
 	let selectedPayment: {
@@ -60,6 +68,26 @@
 			selectedPayment = null;
 		}, 300);
 	}
+
+	async function markAllOverdueAsPaid() {
+		const overduePayments = upcomingRounds.flatRounds.filter(
+			({ payment }) => payment && payment.daysUntil < 0
+		);
+		for (const { group, roundNumber } of overduePayments) {
+			await actions.markAsPaid(group.id, roundNumber);
+		}
+	}
+
+	async function markAllOverdueAsReceived() {
+		const overduePayouts = upcomingRounds.flatRounds.filter(
+			({ payout }) => payout && payout.daysUntil < 0
+		);
+		for (const { group, payout } of overduePayouts) {
+			if (payout) {
+				await actions.markAsReceived(group.id, payout.round.roundNumber);
+			}
+		}
+	}
 </script>
 
 <div class="space-y-4 p-4">
@@ -86,6 +114,34 @@
 			</Button>
 		</div>
 	{:else}
+		<!-- Overdue rounds -->
+		{#if overdueRounds.length > 0}
+			<Card class="p-3 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10">
+				<div class="flex items-center justify-between mb-3">
+					<p class="text-sm font-semibold text-red-600 dark:text-red-400">
+						เกินกำหนด ({overdueRounds.length})
+					</p>
+				</div>
+				<div class="flex gap-2">
+					<Button
+						onclick={markAllOverdueAsPaid}
+						class="flex-1"
+						size="sm"
+						variant="destructive"
+					>
+						จ่ายทั้งหมด
+					</Button>
+					<Button
+						onclick={markAllOverdueAsReceived}
+						class="flex-1"
+						size="sm"
+						variant="outline"
+					>
+						รับทั้งหมด
+					</Button>
+				</div>
+			</Card>
+		{/if}
 		<!-- Upcoming flat list sorted by date -->
 		<div>
 			{#if upcomingRounds.flatRounds.length === 0}

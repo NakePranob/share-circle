@@ -247,13 +247,13 @@ export function getUpcomingPayments(
 export function getUpcomingPayouts(
 	groups: Group[],
 	daysAhead = 7
-): Array<{ group: Group; round: Group['rounds'][0] }> {
+): Array<{ group: Group; round: Group['rounds'][0]; daysUntil: number }> {
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
 	const future = new Date(today);
 	future.setDate(today.getDate() + daysAhead);
 
-	const results: Array<{ group: Group; round: Group['rounds'][0] }> = [];
+	const results: Array<{ group: Group; round: Group['rounds'][0]; daysUntil: number }> = [];
 
 	for (const group of groups) {
 		if (!group.isActive) continue;
@@ -262,7 +262,10 @@ export function getUpcomingPayouts(
 				const roundDate = new Date(round.date);
 				roundDate.setHours(0, 0, 0, 0);
 				if (roundDate <= future) {
-					results.push({ group, round });
+					const daysUntil = Math.ceil(
+						(roundDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+					);
+					results.push({ group, round, daysUntil });
 				}
 			}
 		}

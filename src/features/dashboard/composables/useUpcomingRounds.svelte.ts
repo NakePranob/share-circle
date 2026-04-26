@@ -14,6 +14,7 @@ interface UpcomingPayment {
 interface UpcomingPayout {
 	group: Group;
 	round: Round;
+	daysUntil: number;
 }
 
 export interface FlatRound {
