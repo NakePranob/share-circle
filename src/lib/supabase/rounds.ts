@@ -106,3 +106,28 @@ export async function updatePayoutStatus(id: string, payoutStatus: PayoutStatus)
 	if (error) throw error;
 	return data;
 }
+
+export async function updateRoundStatusBatch(ids: string[], status: RoundStatus) {
+	const { data, error } = await supabase
+		.from('rounds')
+		.update({ status, paid_at: status === ROUND_STATUS.PAID ? new Date().toISOString() : null })
+		.in('id', ids)
+		.select();
+
+	if (error) throw error;
+	return data;
+}
+
+export async function updatePayoutStatusBatch(ids: string[], payoutStatus: PayoutStatus) {
+	const { data, error } = await supabase
+		.from('rounds')
+		.update({
+			payout_status: payoutStatus,
+			received_at: payoutStatus === PAYOUT_STATUS.RECEIVED ? new Date().toISOString() : null
+		})
+		.in('id', ids)
+		.select();
+
+	if (error) throw error;
+	return data;
+}

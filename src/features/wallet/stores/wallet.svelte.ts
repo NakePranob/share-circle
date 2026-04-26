@@ -2,7 +2,9 @@ import { useAuth } from '$features/auth/composables/useAuth.svelte';
 import {
 	fetchWallet,
 	updateInitialBalance,
+	adjustBalanceBatch as adjustBalanceBatchService,
 	addTransactionRecord,
+	addTransactionRecordBatch,
 	removeTransactionRecord,
 	resetWallet,
 	deleteWalletAndTransactions
@@ -100,6 +102,39 @@ export function useWalletStore() {
 				};
 			} catch (error) {
 				toast.error('Failed to remove transaction');
+				throw error;
+			}
+		},
+
+		async adjustBalanceBatch(delta: number): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			try {
+				await adjustBalanceBatchService(auth.userId, delta);
+				wallet = { ...wallet, initialBalance: wallet.initialBalance + delta };
+			} catch (error) {
+				toast.error('Failed to update balance');
+				throw error;
+			}
+		},
+
+		async addTransactionBatch(
+			type: TransactionType,
+			amounts: Array<{ amount: number; note?: string; groupId?: string | null; roundNumber?: number | null; date?: string }>
+		): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			try {
+				const params = amounts.map((a) => ({
+					type,
+					amount: a.amount,
+					note: a.note ?? '',
+					groupId: a.groupId ?? null,
+					roundNumber: a.roundNumber ?? null,
+					date: a.date
+				}));
+				const txns = await addTransactionRecordBatch(auth.userId, params);
+				wallet = { ...wallet, transactions: [...wallet.transactions, ...txns] };
+			} catch (error) {
+				toast.error('Failed to add transactions');
 				throw error;
 			}
 		},

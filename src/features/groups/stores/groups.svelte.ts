@@ -13,7 +13,9 @@ import {
 	setRoundReceived,
 	setRoundReceivedPending,
 	findRoundRowId,
-	updateRoundFields
+	updateRoundFields,
+	setRoundsPaidBatch,
+	setRoundsReceivedBatch
 } from '$features/groups/services/roundsService';
 import type { Group, Round } from '$features/groups/types';
 import type { RoundUpdate } from '$lib/supabase/rounds';
@@ -205,6 +207,56 @@ export function useGroupsStore() {
 				round.receivedAt = undefined;
 			} catch (error) {
 				toast.error('Failed to mark round as pending');
+				throw error;
+			}
+		},
+
+		async markRoundsPaidBatch(
+			items: Array<{ groupId: string; roundNumber: number }>
+		): Promise<void> {
+			try {
+				await setRoundsPaidBatch(items);
+				const now = new SvelteDate().toISOString();
+				groups = groups.map((g) => {
+					if (!items.some((item) => item.groupId === g.id)) return g;
+					return {
+						...g,
+						rounds: g.rounds.map((r) => {
+							const item = items.find((i) => i.groupId === g.id && i.roundNumber === r.roundNumber);
+							if (item) {
+								return { ...r, status: 'paid' as const, paidAt: now };
+							}
+							return r;
+						})
+					};
+				});
+			} catch (error) {
+				toast.error('Failed to mark rounds as paid');
+				throw error;
+			}
+		},
+
+		async markRoundsReceivedBatch(
+			items: Array<{ groupId: string; roundNumber: number }>
+		): Promise<void> {
+			try {
+				await setRoundsReceivedBatch(items);
+				const now = new SvelteDate().toISOString();
+				groups = groups.map((g) => {
+					if (!items.some((item) => item.groupId === g.id)) return g;
+					return {
+						...g,
+						rounds: g.rounds.map((r) => {
+							const item = items.find((i) => i.groupId === g.id && i.roundNumber === r.roundNumber);
+							if (item) {
+								return { ...r, payoutStatus: 'received' as const, receivedAt: now };
+							}
+							return r;
+						})
+					};
+				});
+			} catch (error) {
+				toast.error('Failed to mark rounds as received');
 				throw error;
 			}
 		},

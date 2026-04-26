@@ -2,7 +2,9 @@ import {
 	getRounds,
 	updateRound,
 	updateRoundStatus,
-	updatePayoutStatus
+	updatePayoutStatus,
+	updateRoundStatusBatch,
+	updatePayoutStatusBatch
 } from '$lib/supabase/rounds';
 import type { RoundUpdate } from '$lib/supabase/rounds';
 
@@ -35,4 +37,56 @@ export async function setRoundReceivedPending(groupId: string, roundNumber: numb
 
 export async function updateRoundFields(id: string, updates: RoundUpdate): Promise<void> {
 	await updateRound(id, updates);
+}
+
+export async function setRoundsPaidBatch(
+	items: Array<{ groupId: string; roundNumber: number }>
+): Promise<void> {
+	const uniqueGroupIds = [...new Set(items.map((item) => item.groupId))];
+	const allRounds = await Promise.all(
+		uniqueGroupIds.map((groupId) => getRounds(groupId))
+	);
+
+	const idMap = new Map<string, string>();
+	items.forEach(({ groupId, roundNumber }) => {
+		const groupRounds = allRounds.flat().filter((r) => r.group_id === groupId);
+		const round = groupRounds.find((r) => r.round_number === roundNumber);
+		if (round) {
+			idMap.set(`${groupId}-${roundNumber}`, round.id);
+		}
+	});
+
+	const ids = items
+		.map(({ groupId, roundNumber }) => idMap.get(`${groupId}-${roundNumber}`))
+		.filter((id): id is string => id !== undefined);
+
+	if (ids.length === 0) return;
+
+	await updateRoundStatusBatch(ids, 'paid');
+}
+
+export async function setRoundsReceivedBatch(
+	items: Array<{ groupId: string; roundNumber: number }>
+): Promise<void> {
+	const uniqueGroupIds = [...new Set(items.map((item) => item.groupId))];
+	const allRounds = await Promise.all(
+		uniqueGroupIds.map((groupId) => getRounds(groupId))
+	);
+
+	const idMap = new Map<string, string>();
+	items.forEach(({ groupId, roundNumber }) => {
+		const groupRounds = allRounds.flat().filter((r) => r.group_id === groupId);
+		const round = groupRounds.find((r) => r.round_number === roundNumber);
+		if (round) {
+			idMap.set(`${groupId}-${roundNumber}`, round.id);
+		}
+	});
+
+	const ids = items
+		.map(({ groupId, roundNumber }) => idMap.get(`${groupId}-${roundNumber}`))
+		.filter((id): id is string => id !== undefined);
+
+	if (ids.length === 0) return;
+
+	await updatePayoutStatusBatch(ids, 'received');
 }

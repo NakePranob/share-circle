@@ -73,20 +73,24 @@
 		const overduePayments = upcomingRounds.flatRounds.filter(
 			({ payment }) => payment && payment.daysUntil < 0
 		);
-		for (const { group, roundNumber } of overduePayments) {
-			await actions.markAsPaid(group.id, roundNumber);
-		}
+		const items = overduePayments.map(({ group, roundNumber }) => ({
+			groupId: group.id,
+			roundNumber
+		}));
+		await actions.markAllAsPaid(items);
 	}
 
 	async function markAllOverdueAsReceived() {
 		const overduePayouts = upcomingRounds.flatRounds.filter(
 			({ payout }) => payout && payout.daysUntil < 0
 		);
-		for (const { group, payout } of overduePayouts) {
-			if (payout) {
-				await actions.markAsReceived(group.id, payout.round.roundNumber);
-			}
-		}
+		const items = overduePayouts
+			.filter(({ payout }) => payout !== null)
+			.map(({ group, payout }) => ({
+				groupId: group.id,
+				roundNumber: payout!.round.roundNumber
+			}));
+		await actions.markAllAsReceived(items);
 	}
 </script>
 
@@ -117,10 +121,10 @@
 		<!-- Overdue rounds -->
 		{#if overdueRounds.length > 0}
 			<Card class="p-3 border-red-200 dark:border-red-900 bg-red-50/30 dark:bg-red-950/10">
-				<div class="flex items-center justify-between mb-3">
-					<p class="text-sm font-semibold text-red-600 dark:text-red-400">
+				<div class="flex items-center justify-between">
+					<h4 class="text-sm font-semibold text-red-600 dark:text-red-400">
 						เกินกำหนด ({overdueRounds.length})
-					</p>
+					</h4>
 				</div>
 				<div class="flex gap-2">
 					<Button

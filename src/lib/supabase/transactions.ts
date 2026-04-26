@@ -42,6 +42,13 @@ export async function createTransaction(transaction: TransactionInsert) {
 	return data;
 }
 
+export async function createTransactionBatch(transactions: TransactionInsert[]) {
+	const { data, error } = await supabase.from('transactions').insert(transactions).select();
+
+	if (error) throw error;
+	return data;
+}
+
 export async function updateTransaction(id: string, updates: TransactionUpdate) {
 	const { data, error } = await supabase
 		.from('transactions')

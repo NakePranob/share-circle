@@ -79,6 +79,62 @@ export function useGroupActions() {
 		toast.success(TOAST_MESSAGES.SAVED);
 	}
 
+	async function markAllAsPaid(items: Array<{ groupId: string; roundNumber: number }>) {
+		if (items.length === 0) return;
+
+		const rounds = items
+			.map(({ groupId, roundNumber }) =>
+				groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber)
+			)
+			.filter((r): r is Round => r !== undefined);
+
+		const totalAmount = rounds.reduce((sum, r) => sum + r.paymentAmount, 0);
+
+		await walletStore.adjustBalanceBatch(-totalAmount);
+
+		await walletStore.addTransactionBatch(
+			TRANSACTION_TYPE.PAYMENT,
+			rounds.map((r) => ({
+				amount: r.paymentAmount,
+				note: '',
+				groupId: items.find((i) => i.roundNumber === r.roundNumber)?.groupId ?? null,
+				roundNumber: r.roundNumber
+			}))
+		);
+
+		await groupsStore.markRoundsPaidBatch(items);
+
+		toast.success(`จ่ายทั้งหมด ${items.length} รายการแล้ว`);
+	}
+
+	async function markAllAsReceived(items: Array<{ groupId: string; roundNumber: number }>) {
+		if (items.length === 0) return;
+
+		const rounds = items
+			.map(({ groupId, roundNumber }) =>
+				groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber)
+			)
+			.filter((r): r is Round => r !== undefined);
+
+		const totalAmount = rounds.reduce((sum, r) => sum + (r.receiveAmount - (r.managementFee ?? 0)), 0);
+
+		await walletStore.adjustBalanceBatch(+totalAmount);
+
+		await walletStore.addTransactionBatch(
+			TRANSACTION_TYPE.PAYOUT,
+			rounds.map((r) => ({
+				amount: r.receiveAmount - (r.managementFee ?? 0),
+				note: '',
+				groupId: items.find((i) => i.roundNumber === r.roundNumber)?.groupId ?? null,
+				roundNumber: r.roundNumber
+			}))
+		);
+
+		await groupsStore.markRoundsReceivedBatch(items);
+
+		toast.success(`รับทั้งหมด ${items.length} รายการแล้ว`);
+	}
+
 	return {
 		markAsPaid,
 		markAsPending,
@@ -86,6 +142,8 @@ export function useGroupActions() {
 		markReceivedPending,
 		deleteGroup,
 		toggleActive,
-		updateRound
+		updateRound,
+		markAllAsPaid,
+		markAllAsReceived
 	};
 }
