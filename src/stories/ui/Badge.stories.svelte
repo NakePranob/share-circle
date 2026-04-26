@@ -17,18 +17,10 @@
 	});
 </script>
 
-<Story name="Default" args={{ variant: 'default' }}>
-	ใช้งาน
-</Story>
+<Story name="Default" args={{ variant: 'default' }}>ใช้งาน</Story>
 
-<Story name="Secondary" args={{ variant: 'secondary' }}>
-	รอดำเนินการ
-</Story>
+<Story name="Secondary" args={{ variant: 'secondary' }}>รอดำเนินการ</Story>
 
-<Story name="Destructive" args={{ variant: 'destructive' }}>
-	ค้างชำระ
-</Story>
+<Story name="Destructive" args={{ variant: 'destructive' }}>ค้างชำระ</Story>
 
-<Story name="Outline" args={{ variant: 'outline' }}>
-	ปิดแล้ว
-</Story>
+<Story name="Outline" args={{ variant: 'outline' }}>ปิดแล้ว</Story>

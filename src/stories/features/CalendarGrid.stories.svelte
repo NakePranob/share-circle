@@ -25,7 +25,8 @@
 
 <Story name="Empty" />
 
-<Story name="WithDays"
+<Story
+	name="WithDays"
 	args={{
 		calendarDays: [
 			{ date: '2026-01-01', day: 1 },

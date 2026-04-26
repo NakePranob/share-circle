@@ -30,13 +30,7 @@
 			<form onsubmit={handleSubmit} class="space-y-4">
 				<div class="space-y-2">
 					<Label for="email">อีเมล</Label>
-					<Input
-						id="email"
-						type="email"
-						placeholder="your@email.com"
-						bind:value={email}
-						required
-					/>
+					<Input id="email" type="email" placeholder="your@email.com" bind:value={email} required />
 				</div>
 				<div class="space-y-2">
 					<Label for="password">รหัสผ่าน</Label>

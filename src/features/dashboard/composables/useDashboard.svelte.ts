@@ -1,4 +1,9 @@
-import { buildCashFlow, buildPaidCashFlow, getUpcomingPayments, getUpcomingPayouts } from '$features/calendar/utils/cashflow';
+import {
+	buildCashFlow,
+	buildPaidCashFlow,
+	getUpcomingPayments,
+	getUpcomingPayouts
+} from '$features/calendar/utils/cashflow';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 

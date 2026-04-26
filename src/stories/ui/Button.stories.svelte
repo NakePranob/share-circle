@@ -24,38 +24,20 @@
 	});
 </script>
 
-<Story name="Default" args={{ variant: 'default' }}>
-	ยืนยัน
-</Story>
+<Story name="Default" args={{ variant: 'default' }}>ยืนยัน</Story>
 
-<Story name="Outline" args={{ variant: 'outline' }}>
-	ยกเลิก
-</Story>
+<Story name="Outline" args={{ variant: 'outline' }}>ยกเลิก</Story>
 
-<Story name="Secondary" args={{ variant: 'secondary' }}>
-	รายละเอียด
-</Story>
+<Story name="Secondary" args={{ variant: 'secondary' }}>รายละเอียด</Story>
 
-<Story name="Ghost" args={{ variant: 'ghost' }}>
-	ดูเพิ่มเติม
-</Story>
+<Story name="Ghost" args={{ variant: 'ghost' }}>ดูเพิ่มเติม</Story>
 
-<Story name="Destructive" args={{ variant: 'destructive' }}>
-	ลบ
-</Story>
+<Story name="Destructive" args={{ variant: 'destructive' }}>ลบ</Story>
 
-<Story name="Link" args={{ variant: 'link' }}>
-	ลิงก์
-</Story>
+<Story name="Link" args={{ variant: 'link' }}>ลิงก์</Story>
 
-<Story name="Small" args={{ size: 'sm' }}>
-	เล็ก
-</Story>
+<Story name="Small" args={{ size: 'sm' }}>เล็ก</Story>
 
-<Story name="Large" args={{ size: 'lg' }}>
-	ใหญ่
-</Story>
+<Story name="Large" args={{ size: 'lg' }}>ใหญ่</Story>
 
-<Story name="Disabled" args={{ disabled: true }}>
-	ปิดใช้งาน
-</Story>
+<Story name="Disabled" args={{ disabled: true }}>ปิดใช้งาน</Story>

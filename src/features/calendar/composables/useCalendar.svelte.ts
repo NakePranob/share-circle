@@ -1,6 +1,10 @@
 import { SvelteDate } from 'svelte/reactivity';
 import type { DayData } from '$features/calendar/types';
-import { buildCashFlow, buildPaidCashFlow, buildProjectedCashFlow } from '$features/calendar/utils/cashflow';
+import {
+	buildCashFlow,
+	buildPaidCashFlow,
+	buildProjectedCashFlow
+} from '$features/calendar/utils/cashflow';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
@@ -78,15 +82,33 @@ export function useCalendar() {
 	}
 
 	return {
-		get viewYear() { return viewYear; },
-		get viewMonth() { return viewMonth; },
-		get cashFlow() { return cashFlow; },
-		get paidCashFlow() { return paidCashFlow; },
-		get projectedCashFlow() { return projectedCashFlow; },
-		get calendarDays() { return calendarDays; },
-		get monthLabel() { return monthLabel; },
-		get selectedDay() { return selectedDay; },
-		set selectedDay(v: DayData | null) { selectedDay = v; },
+		get viewYear() {
+			return viewYear;
+		},
+		get viewMonth() {
+			return viewMonth;
+		},
+		get cashFlow() {
+			return cashFlow;
+		},
+		get paidCashFlow() {
+			return paidCashFlow;
+		},
+		get projectedCashFlow() {
+			return projectedCashFlow;
+		},
+		get calendarDays() {
+			return calendarDays;
+		},
+		get monthLabel() {
+			return monthLabel;
+		},
+		get selectedDay() {
+			return selectedDay;
+		},
+		set selectedDay(v: DayData | null) {
+			selectedDay = v;
+		},
 		todayStr,
 		prevMonth,
 		nextMonth,

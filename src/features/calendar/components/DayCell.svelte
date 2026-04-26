@@ -16,7 +16,8 @@
 		onclick: () => void;
 	}
 
-	let { cell, dayData, projectedDayData, groups, isToday, isLastRow, isSaturday, onclick }: Props = $props();
+	let { cell, dayData, projectedDayData, groups, isToday, isLastRow, isSaturday, onclick }: Props =
+		$props();
 
 	const isNegative = $derived(projectedDayData?.hasNegativeBalance ?? false);
 
@@ -25,29 +26,36 @@
 
 	const hasUnpaid = $derived(
 		dayData?.transactions.some((t) => {
-			if (t.transaction.type !== 'payment' || !t.transaction.groupId || !t.transaction.roundNumber) return false;
-			const round = groupMap.get(t.transaction.groupId)?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
+			if (t.transaction.type !== 'payment' || !t.transaction.groupId || !t.transaction.roundNumber)
+				return false;
+			const round = groupMap
+				.get(t.transaction.groupId)
+				?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
 			return round?.status !== 'paid';
 		}) ?? false
 	);
 
 	const hasUnreceived = $derived(
 		dayData?.transactions.some((t) => {
-			if (t.transaction.type !== 'payout' || !t.transaction.groupId || !t.transaction.roundNumber) return false;
-			const round = groupMap.get(t.transaction.groupId)?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
+			if (t.transaction.type !== 'payout' || !t.transaction.groupId || !t.transaction.roundNumber)
+				return false;
+			const round = groupMap
+				.get(t.transaction.groupId)
+				?.rounds.find((r) => r.roundNumber === t.transaction.roundNumber);
 			return round?.payoutStatus !== 'received';
 		}) ?? false
 	);
 
 	const hasAnyRounds = $derived(
-		(groups.some((group) =>
-			group.isActive &&
-			group.rounds.some((round) => round.date === cell.date) &&
-			(startOfDay(new Date(cell.date)) >= startOfDay(new Date()) || hasUnpaid || hasUnreceived)
-		)) ?? false
+		groups.some(
+			(group) =>
+				group.isActive &&
+				group.rounds.some((round) => round.date === cell.date) &&
+				(startOfDay(new Date(cell.date)) >= startOfDay(new Date()) || hasUnpaid || hasUnreceived)
+		) ?? false
 	);
 	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);
-	
+
 	$inspect('cell.date', cell.date);
 	$inspect('hasAnyRounds', hasAnyRounds);
 	$inspect('!hasUnpaid', !hasUnpaid);
@@ -60,19 +68,24 @@
 <button
 	type="button"
 	{onclick}
-	class="relative min-h-16 border-b border-border p-1 text-left transition-colors hover:bg-muted/50 {isToday ? 'bg-primary/5' : ''} {isLastRow ? 'border-b-0!' : ''} {!isSaturday ? 'border-r' : ''}"
+	class="relative min-h-16 border-b border-border p-1 text-left transition-colors hover:bg-muted/50 {isToday
+		? 'bg-primary/5'
+		: ''} {isLastRow ? 'border-b-0!' : ''} {!isSaturday ? 'border-r' : ''}"
 >
 	<span
-		class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium {isToday ? 'bg-primary text-primary-foreground' : ''}"
+		class="flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium {isToday
+			? 'bg-primary text-primary-foreground'
+			: ''}"
 	>
 		{cell.day}
 	</span>
 	{#if hasAnyRounds}
-		<p class="mt-0.5 text-[9px] leading-tight {isNegative ? 'text-red-500 font-bold' : 'text-muted-foreground'}">
-			{!allDone 
-				? formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '') 
-				: ''
-			}
+		<p
+			class="mt-0.5 text-[9px] leading-tight {isNegative
+				? 'font-bold text-red-500'
+				: 'text-muted-foreground'}"
+		>
+			{!allDone ? formatCurrency(projectedDayData?.balance ?? 0).replace('฿', '') : ''}
 		</p>
 		<div class="mt-1 flex gap-0.5">
 			{#if hasUnpaid}

@@ -95,7 +95,10 @@ export async function updateRoundStatus(id: string, status: RoundStatus) {
 export async function updatePayoutStatus(id: string, payoutStatus: PayoutStatus) {
 	const { data, error } = await supabase
 		.from('rounds')
-		.update({ payout_status: payoutStatus, received_at: payoutStatus === PAYOUT_STATUS.RECEIVED ? new Date().toISOString() : null })
+		.update({
+			payout_status: payoutStatus,
+			received_at: payoutStatus === PAYOUT_STATUS.RECEIVED ? new Date().toISOString() : null
+		})
 		.eq('id', id)
 		.select()
 		.single();

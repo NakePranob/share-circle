@@ -24,7 +24,8 @@
 
 <Story name="Closed" />
 
-<Story name="MyRoundOpen"
+<Story
+	name="MyRoundOpen"
 	args={{
 		editRound: {
 			roundNumber: 1,
@@ -38,7 +39,8 @@
 	}}
 />
 
-<Story name="PayRoundOpen"
+<Story
+	name="PayRoundOpen"
 	args={{
 		editRound: {
 			roundNumber: 2,

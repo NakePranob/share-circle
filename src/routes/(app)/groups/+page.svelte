@@ -167,10 +167,10 @@
 
 	<Tabs value="active">
 		<TabsList class="w-full space-x-1">
-			<TabsTrigger value="active" class="flex-1 bg-background rounded-e">
+			<TabsTrigger value="active" class="flex-1 rounded-e bg-background">
 				กำลังดำเนิน ({activeGroups.length})
 			</TabsTrigger>
-			<TabsTrigger value="closed" class="flex-1 bg-background rounded-s">
+			<TabsTrigger value="closed" class="flex-1 rounded-s bg-background">
 				ปิดแล้ว ({closedGroups.length})
 			</TabsTrigger>
 		</TabsList>
@@ -402,7 +402,7 @@
 
 		<ul class="my-2 space-y-2 rounded-xl bg-secondary p-4">
 			{#each dataImport.groupsWithMissingTxns as name (name)}
-				<li class="flex items-center gap-2 rounded-lg bg-background py-2 px-4 shadow text-sm">
+				<li class="flex items-center gap-2 rounded-lg bg-background px-4 py-2 text-sm shadow">
 					<span class="h-1.5 w-1.5 rounded-full bg-destructive"></span>
 					{name}
 				</li>

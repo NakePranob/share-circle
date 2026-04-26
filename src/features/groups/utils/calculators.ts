@@ -13,7 +13,10 @@ export function buildRoundsFromFormData(data: GroupFormData): Round[] {
 			: (data.steppedPayments ?? []);
 
 	// ยอดจ่ายต่อมือ = ผลรวม paymentAmount ของมือที่เราเลือกรับ
-	const myRoundsPaymentSum = data.selectedRounds.reduce((sum, i) => sum + (basePayments[i] ?? 0), 0);
+	const myRoundsPaymentSum = data.selectedRounds.reduce(
+		(sum, i) => sum + (basePayments[i] ?? 0),
+		0
+	);
 	const paymentPerRound = data.selectedRounds.length > 0 ? myRoundsPaymentSum : 0;
 
 	const fee = data.managementFee ?? 0;
@@ -54,7 +57,9 @@ export function iReceiveForRound(round: Round): number {
 }
 
 export function totalIReceive(group: Group): number {
-	return group.rounds.filter((r) => r.isMyRound).reduce((s: number, r: Round) => s + r.receiveAmount, 0);
+	return group.rounds
+		.filter((r) => r.isMyRound)
+		.reduce((s: number, r: Round) => s + r.receiveAmount, 0);
 }
 
 export function totalManagementFee(group: Group): number {

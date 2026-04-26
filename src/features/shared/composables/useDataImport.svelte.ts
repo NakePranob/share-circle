@@ -1,192 +1,58 @@
 import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 import { useGroupsStore } from '$features/groups/stores/groups.svelte';
 import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
-import { TRANSACTION_TYPE } from '$features/wallet/types';
 import type { TransactionType } from '$features/wallet/types';
-import { ROUND_STATUS, PAYOUT_STATUS } from '$features/groups/types';
-import type { Round } from '$features/groups/types';
+import {
+	parseImportJSON,
+	checkDuplicateNames,
+	checkTransactionIntegrity,
+	resolveIntegrityConflicts
+} from '$features/shared/services/importService';
+import type {
+	ImportGroup,
+	ImportTransaction,
+	ImportData
+} from '$features/shared/services/importService';
 
-type ImportGroup = Omit<
-	{ id: string; name: string; rounds: Round[]; createdAt: string; isActive: boolean },
-	'id' | 'createdAt'
-> & { id?: string };
+function createDataImport() {
+	const groupsStore = useGroupsStore();
+	const walletStore = useWalletStore();
 
-type ImportTransaction = {
-	type: string;
-	amount: number;
-	note: string;
-	groupId: string | null;
-	roundNumber: number | null;
-	date?: string;
-};
+	let importJSONText = $state('');
+	let showDuplicateDialog = $state(false);
+	let duplicateNames = $state<string[]>([]);
+	let groupsToImport = $state<ImportGroup[]>([]);
+	let importDataTemp = $state('');
+	let renamedGroups = $state<Record<number, string>>({});
+	const groupsToRemove = new SvelteSet<number>();
+	let importMode = $state<'add' | 'replace'>('add');
+	let hasWallet = $state(false);
+	let showIntegrityDialog = $state(false);
+	let groupsWithMissingTxns = $state<string[]>([]);
+	let pendingImportData: ImportData | null = null;
 
-function checkTransactionIntegrity(
-	groups: ImportGroup[],
-	transactions: ImportTransaction[]
-): string[] {
-	const missing: string[] = [];
-	for (const group of groups) {
-		const groupTxns = transactions.filter((t) => t.groupId === group.id);
-		const hasMissing = group.rounds.some((round) => {
-			if (round.status === ROUND_STATUS.PAID) {
-				const has = groupTxns.some(
-					(t) => t.roundNumber === round.roundNumber && t.type === TRANSACTION_TYPE.PAYMENT
-				);
-				if (!has) return true;
-			}
-			if (round.isMyRound && round.payoutStatus === PAYOUT_STATUS.RECEIVED) {
-				const has = groupTxns.some(
-					(t) => t.roundNumber === round.roundNumber && t.type === TRANSACTION_TYPE.PAYOUT
-				);
-				if (!has) return true;
-			}
-			return false;
-		});
-		if (hasMissing) missing.push(group.name);
-	}
-	return missing;
-}
-
-export class DataImport {
-	importJSONText = $state('');
-	showDuplicateDialog = $state(false);
-	duplicateNames = $state<string[]>([]);
-	groupsToImport = $state<ImportGroup[]>([]);
-	importDataTemp = $state('');
-	renamedGroups = $state<Record<number, string>>({});
-	groupsToRemove = new SvelteSet<number>();
-	importMode = $state<'add' | 'replace'>('add');
-	hasWallet = $state(false);
-
-	showIntegrityDialog = $state(false);
-	groupsWithMissingTxns = $state<string[]>([]);
-	#pendingImportJSON = '';
-
-
-	#groupsStore = useGroupsStore();
-	#walletStore = useWalletStore();
-
-	parseAndValidateJSON(json: string) {
+	function parseAndValidateJSON(json: string) {
 		try {
 			const data = JSON.parse(json);
-			this.hasWallet = !!data.wallet;
+			hasWallet = !!data.wallet;
 			return true;
 		} catch {
-			this.hasWallet = false;
+			hasWallet = false;
 			return false;
 		}
 	}
 
-	async importData(json: string, mode: 'add' | 'replace' = 'add') {
-		try {
-			const data = JSON.parse(json);
-			if (!data.groups && !data.group) {
-				throw new Error('Invalid data format');
-			}
-			const tempGroups: ImportGroup[] = data.groups || (data.group ? [data.group] : []);
-
-			// Duplicate name check (add mode only)
-			if (mode === 'add') {
-				const existingGroupNames = new SvelteSet(
-					this.#groupsStore.groups.map((g: { name: string }) => g.name)
-				);
-				const tempDuplicateNames = tempGroups
-					.filter((g) => existingGroupNames.has(g.name))
-					.map((g) => g.name);
-
-				if (tempDuplicateNames.length > 0) {
-					this.duplicateNames = tempDuplicateNames;
-					this.groupsToImport = tempGroups;
-					this.importDataTemp = json;
-					this.renamedGroups = {};
-					this.groupsToRemove.clear();
-					this.showDuplicateDialog = true;
-					return;
-				}
-			}
-
-			// Integrity check before any destructive API calls
-			const walletTxns: ImportTransaction[] = data.wallet?.transactions ?? [];
-			const missingGroups = checkTransactionIntegrity(tempGroups, walletTxns);
-			if (missingGroups.length > 0) {
-				this.groupsWithMissingTxns = missingGroups;
-				this.#pendingImportJSON = json;
-				this.importMode = mode;
-				this.showIntegrityDialog = true;
-				return;
-			}
-
-			await this.#doImportWithMode(json, mode);
-		} catch {
-			alert('Invalid JSON format');
-		}
-	}
-
-	async confirmIntegrityReset() {
-		this.showIntegrityDialog = false;
-		const data = JSON.parse(this.#pendingImportJSON);
-		const tempGroups: ImportGroup[] = data.groups || (data.group ? [data.group] : []);
-		const missingSet = new SvelteSet(this.groupsWithMissingTxns);
-
-		for (const group of tempGroups) {
-			if (!missingSet.has(group.name)) continue;
-			group.rounds = group.rounds.map((r) => ({
-				...r,
-				status: ROUND_STATUS.PENDING,
-				paidAt: undefined,
-				payoutStatus: PAYOUT_STATUS.PENDING,
-				receivedAt: undefined
-			}));
-		}
-
-		if (data.wallet?.transactions) {
-			const affectedIds = new SvelteSet(
-				tempGroups.filter((g) => missingSet.has(g.name)).map((g) => g.id)
-			);
-			data.wallet.transactions = (data.wallet.transactions as ImportTransaction[]).filter(
-				(t) => !affectedIds.has(t.groupId ?? '')
-			);
-		}
-
-		const cleanedJSON = JSON.stringify(data);
-		await this.#doImportWithMode(cleanedJSON, this.importMode);
-		this.groupsWithMissingTxns = [];
-		this.#pendingImportJSON = '';
-	}
-
-	async skipIntegrityReset() {
-		this.showIntegrityDialog = false;
-		await this.#doImportWithMode(this.#pendingImportJSON, this.importMode);
-		this.groupsWithMissingTxns = [];
-		this.#pendingImportJSON = '';
-	}
-
-	async #doImportWithMode(json: string, mode: 'add' | 'replace') {
-		if (mode === 'replace') {
-			const data = JSON.parse(json);
-			await this.#groupsStore.deleteAll();
-			await this.#walletStore.clearAndReset();
-			if (data.wallet?.initialBalance !== undefined) {
-				await this.#walletStore.setInitialBalance(data.wallet.initialBalance);
-			}
-		}
-		await this.#doImport(json);
-	}
-
-	async #doImport(json: string) {
-		const data = JSON.parse(json);
-		const tempGroups: ImportGroup[] = data.groups || (data.group ? [data.group] : []);
-
-		const importedGroups = await Promise.all(tempGroups.map((group) => this.#groupsStore.add(group)));
+	async function doImport(data: ImportData) {
+		const importedGroups = await Promise.all(data.groups.map((group) => groupsStore.add(group)));
 
 		if (data.wallet?.transactions) {
 			const idMap = new SvelteMap<string, string>(
-				tempGroups.map((g, i) => [g.id ?? '', importedGroups[i].id])
+				data.groups.map((g, i) => [g.id ?? '', importedGroups[i].id])
 			);
 
 			await Promise.all(
 				(data.wallet.transactions as ImportTransaction[]).map((txn) =>
-					this.#walletStore.addTransaction(
+					walletStore.addTransaction(
 						txn.type as TransactionType,
 						txn.amount,
 						txn.note,
@@ -198,21 +64,87 @@ export class DataImport {
 			);
 		}
 
-		this.importJSONText = '';
+		importJSONText = '';
 	}
 
-	async handleImportWithRenamedGroups() {
+	async function doImportWithMode(data: ImportData, mode: 'add' | 'replace') {
+		if (mode === 'replace') {
+			await groupsStore.deleteAll();
+			await walletStore.clearAndReset();
+			if (data.wallet?.initialBalance !== undefined) {
+				await walletStore.setInitialBalance(data.wallet.initialBalance);
+			}
+		}
+		await doImport(data);
+	}
+
+	async function importData(json: string, mode: 'add' | 'replace' = 'add') {
+		try {
+			const parsed = parseImportJSON(json);
+
+			// Duplicate name check (add mode only)
+			if (mode === 'add') {
+				const existingNames = groupsStore.groups.map((g) => g.name);
+				const dupes = checkDuplicateNames(parsed.groups, existingNames);
+				if (dupes.length > 0) {
+					duplicateNames = dupes;
+					groupsToImport = parsed.groups;
+					importDataTemp = json;
+					renamedGroups = {};
+					groupsToRemove.clear();
+					showDuplicateDialog = true;
+					return;
+				}
+			}
+
+			// Integrity check before destructive API calls
+			const walletTxns: ImportTransaction[] = parsed.wallet?.transactions ?? [];
+			const missing = checkTransactionIntegrity(parsed.groups, walletTxns);
+			if (missing.length > 0) {
+				groupsWithMissingTxns = missing;
+				pendingImportData = parsed;
+				importMode = mode;
+				showIntegrityDialog = true;
+				return;
+			}
+
+			await doImportWithMode(parsed, mode);
+		} catch {
+			alert('Invalid JSON format');
+		}
+	}
+
+	async function confirmIntegrityReset() {
+		showIntegrityDialog = false;
+		if (!pendingImportData) return;
+		const cleaned = resolveIntegrityConflicts(pendingImportData, groupsWithMissingTxns);
+		await doImportWithMode(cleaned, importMode);
+		groupsWithMissingTxns = [];
+		pendingImportData = null;
+	}
+
+	async function skipIntegrityReset() {
+		showIntegrityDialog = false;
+		if (!pendingImportData) return;
+		await doImportWithMode(pendingImportData, importMode);
+		groupsWithMissingTxns = [];
+		pendingImportData = null;
+	}
+
+	async function handleImportWithRenamedGroups() {
 		const groupsToAdd: { group: ImportGroup; oldId: string }[] = [];
-		this.groupsToImport.forEach((group, index) => {
-			if (this.groupsToRemove.has(index)) return;
-			const newName = this.renamedGroups[index];
+		groupsToImport.forEach((group, index) => {
+			if (groupsToRemove.has(index)) return;
+			const newName = renamedGroups[index];
 			if (newName) group.name = newName;
 			groupsToAdd.push({ group, oldId: group.id ?? '' });
 		});
 
-		const importedGroups = await Promise.all(groupsToAdd.map(({ group }) => this.#groupsStore.add(group)));
+		const importedGroups = await Promise.all(
+			groupsToAdd.map(({ group }) => groupsStore.add(group))
+		);
 
-		const data = JSON.parse(this.importDataTemp);
+		const data = JSON.parse(importDataTemp) as { wallet?: { transactions?: ImportTransaction[] } };
 		if (data.wallet?.transactions) {
 			const idMap = new SvelteMap<string, string>(
 				groupsToAdd.map(({ oldId }, i) => [oldId, importedGroups[i].id])
@@ -220,7 +152,7 @@ export class DataImport {
 
 			await Promise.all(
 				(data.wallet.transactions as ImportTransaction[]).map((txn) =>
-					this.#walletStore.addTransaction(
+					walletStore.addTransaction(
 						txn.type as TransactionType,
 						txn.amount,
 						txn.note,
@@ -232,35 +164,96 @@ export class DataImport {
 			);
 		}
 
-		this.showDuplicateDialog = false;
-		this.importJSONText = '';
-		this.importDataTemp = '';
-		this.duplicateNames = [];
-		this.groupsToImport = [];
-		this.renamedGroups = {};
-		this.groupsToRemove.clear();
+		showDuplicateDialog = false;
+		importJSONText = '';
+		importDataTemp = '';
+		duplicateNames = [];
+		groupsToImport = [];
+		renamedGroups = {};
+		groupsToRemove.clear();
 	}
 
-	async handleFileUpload(event: Event, mode: 'add' | 'replace' = 'add') {
+	async function handleFileUpload(event: Event, mode: 'add' | 'replace' = 'add') {
 		const target = event.target as HTMLInputElement;
 		const file = target.files?.[0];
 		if (file) {
 			const text = await file.text();
-			await this.importData(text, mode);
+			await importData(text, mode);
 		}
 	}
 
-	async handleImportFromPaste(mode: 'add' | 'replace' = 'add') {
-		await this.importData(this.importJSONText, mode);
+	async function handleImportFromPaste(mode: 'add' | 'replace' = 'add') {
+		await importData(importJSONText, mode);
 	}
+
+	return {
+		get importJSONText() {
+			return importJSONText;
+		},
+		set importJSONText(v: string) {
+			importJSONText = v;
+		},
+		get showDuplicateDialog() {
+			return showDuplicateDialog;
+		},
+		set showDuplicateDialog(v: boolean) {
+			showDuplicateDialog = v;
+		},
+		get duplicateNames() {
+			return duplicateNames;
+		},
+		get groupsToImport() {
+			return groupsToImport;
+		},
+		get importDataTemp() {
+			return importDataTemp;
+		},
+		get renamedGroups() {
+			return renamedGroups;
+		},
+		set renamedGroups(v: Record<number, string>) {
+			renamedGroups = v;
+		},
+		get groupsToRemove() {
+			return groupsToRemove;
+		},
+		get importMode() {
+			return importMode;
+		},
+		set importMode(v: 'add' | 'replace') {
+			importMode = v;
+		},
+		get hasWallet() {
+			return hasWallet;
+		},
+		set hasWallet(v: boolean) {
+			hasWallet = v;
+		},
+		get showIntegrityDialog() {
+			return showIntegrityDialog;
+		},
+		set showIntegrityDialog(v: boolean) {
+			showIntegrityDialog = v;
+		},
+		get groupsWithMissingTxns() {
+			return groupsWithMissingTxns;
+		},
+		parseAndValidateJSON,
+		importData,
+		confirmIntegrityReset,
+		skipIntegrityReset,
+		handleImportWithRenamedGroups,
+		handleFileUpload,
+		handleImportFromPaste
+	};
 }
 
 // Singleton instance
-let dataImportInstance: DataImport | null = null;
+let instance: ReturnType<typeof createDataImport> | null = null;
 
 export function useDataImport() {
-	if (!dataImportInstance) {
-		dataImportInstance = new DataImport();
+	if (!instance) {
+		instance = createDataImport();
 	}
-	return dataImportInstance;
+	return instance;
 }

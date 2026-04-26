@@ -58,12 +58,13 @@
 	<div class="flex flex-col gap-4">
 		<Toaster />
 		<Button
-			onclick={() => toast('ข้อความแจ้งเตือน', {
-				action: {
-					label: 'ดำเนินการ',
-					onClick: () => console.log('Action clicked')
-				}
-			})}
+			onclick={() =>
+				toast('ข้อความแจ้งเตือน', {
+					action: {
+						label: 'ดำเนินการ',
+						onClick: () => console.log('Action clicked')
+					}
+				})}
 		>
 			แสดง Toast พร้อม Action
 		</Button>

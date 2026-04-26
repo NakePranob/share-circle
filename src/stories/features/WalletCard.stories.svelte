@@ -23,8 +23,17 @@
 	});
 </script>
 
-<Story name="PositiveBalance" args={{ balance: 12500, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }} />
+<Story
+	name="PositiveBalance"
+	args={{ balance: 12500, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }}
+/>
 
-<Story name="NegativeBalance" args={{ balance: -5000, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }} />
+<Story
+	name="NegativeBalance"
+	args={{ balance: -5000, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }}
+/>
 
-<Story name="ZeroBalance" args={{ balance: 0, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }} />
+<Story
+	name="ZeroBalance"
+	args={{ balance: 0, onSetBalance: fn(), onDeposit: fn(), onWithdraw: fn() }}
+/>

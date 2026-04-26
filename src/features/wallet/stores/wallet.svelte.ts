@@ -1,198 +1,135 @@
 import { useAuth } from '$features/auth/composables/useAuth.svelte';
-import { getOrCreateWallet, updateWallet, deleteWallet } from '$lib/supabase/wallets';
-import { getTransactions, createTransaction, deleteTransaction, deleteAllTransactions } from '$lib/supabase/transactions';
-import type { Wallet, Transaction, TransactionType } from '$features/wallet/types';
-import { toISODate } from '$features/shared/utils/dateHelpers';
+import {
+	fetchWallet,
+	updateInitialBalance,
+	addTransactionRecord,
+	removeTransactionRecord,
+	resetWallet,
+	deleteWalletAndTransactions
+} from '$features/wallet/services/walletService';
+import type { Wallet, TransactionType } from '$features/wallet/types';
 import { toast } from 'svelte-sonner';
-import { SvelteDate } from 'svelte/reactivity';
 
-class WalletStore {
-	#auth = useAuth();
-	#wallet = $state<Wallet>({
-		initialBalance: 0,
-		transactions: []
-	});
-	#loading = $state(false);
-	#isLoaded = $state(false);
+// Module-level singleton state (mirrors useAuth pattern)
+let wallet = $state<Wallet>({ initialBalance: 0, transactions: [] });
+let loading = $state(false);
+let isLoaded = $state(false);
 
-	get wallet() {
-		return this.#wallet;
-	}
+export function useWalletStore() {
+	const auth = useAuth();
 
-	get loading() {
-		return this.#loading;
-	}
+	return {
+		get wallet() {
+			return wallet;
+		},
+		get loading() {
+			return loading;
+		},
+		get isLoaded() {
+			return isLoaded;
+		},
 
-	get isLoaded() {
-		return this.#isLoaded;
-	}
-
-	async loadWallet() {
-		if (!this.#auth.userId) return;
-		this.#loading = true;
-		try {
-			const data = await getOrCreateWallet(this.#auth.userId);
-			const transactions = await getTransactions(this.#auth.userId);
-
-			this.#wallet = {
-				initialBalance: data?.initial_balance ?? 0,
-				transactions: transactions.map((t) => ({
-					id: t.id,
-					groupId: t.group_id,
-					roundNumber: t.round_number,
-					date: t.date,
-					actionAt: t.created_at ?? undefined,
-					type: t.type as TransactionType,
-					amount: t.amount,
-					isEstimate: t.is_estimate ?? false,
-					note: t.note ?? ''
-				}))
-			};
-			this.#isLoaded = true;
-		} catch (error) {
-			toast.error('Failed to load wallet');
-			console.error(error);
-		} finally {
-			this.#loading = false;
-		}
-	}
-
-	async adjustBalance(delta: number): Promise<void> {
-		if (!this.#auth.userId) throw new Error('Not authenticated');
-		const newBalance = this.#wallet.initialBalance + delta;
-		try {
-			await updateWallet(this.#auth.userId, { initial_balance: newBalance });
-			this.#wallet = { ...this.#wallet, initialBalance: newBalance };
-		} catch (error) {
-			toast.error('Failed to update balance');
-			throw error;
-		}
-	}
-
-	async setInitialBalance(amount: number): Promise<void> {
-		if (!this.#auth.userId) throw new Error('Not authenticated');
-		try {
-			await updateWallet(this.#auth.userId, { initial_balance: amount });
-			this.#wallet = { ...this.#wallet, initialBalance: amount };
-		} catch (error) {
-			toast.error('Failed to update initial balance');
-			throw error;
-		}
-	}
-
-	async addTransaction(
-		type: TransactionType,
-		amount: number,
-		note = '',
-		groupId: string | null = null,
-		roundNumber: number | null = null,
-		date?: string
-	): Promise<void> {
-		if (!this.#auth.userId) throw new Error('Not authenticated');
-		try {
-			const data = await createTransaction({
-				user_id: this.#auth.userId,
-				group_id: groupId,
-				round_number: roundNumber,
-				date: date ?? toISODate(new SvelteDate()),
-				type,
-				amount,
-				is_estimate: false,
-				note: note || null
-			});
-
-			const txn: Transaction = {
-				id: data.id,
-				groupId: data.group_id,
-				roundNumber: data.round_number,
-				date: data.date,
-				actionAt: data.created_at ?? undefined,
-				type: data.type as TransactionType,
-				amount: data.amount,
-				isEstimate: data.is_estimate ?? false,
-				note: data.note ?? ''
-			};
-
-			this.#wallet = {
-				...this.#wallet,
-				transactions: [...this.#wallet.transactions, txn]
-			};
-		} catch (error) {
-			toast.error('Failed to add transaction');
-			throw error;
-		}
-	}
-
-	async removeTransaction(id: string): Promise<void> {
-		try {
-			await deleteTransaction(id);
-			this.#wallet = {
-				...this.#wallet,
-				transactions: this.#wallet.transactions.filter((t) => t.id !== id)
-			};
-		} catch (error) {
-			toast.error('Failed to remove transaction');
-			throw error;
-		}
-	}
-
-	clearAll(): void {
-		this.#wallet = {
-			initialBalance: 0,
-			transactions: []
-		};
-	}
-
-	async deleteAll(): Promise<void> {
-		if (!this.#auth.userId) throw new Error('Not authenticated');
-		try {
-			await deleteAllTransactions(this.#auth.userId);
+		async loadWallet() {
+			if (!auth.userId) return;
+			loading = true;
 			try {
-				await deleteWallet(this.#auth.userId);
-			} catch {
-				await deleteWallet(this.#auth.userId); // retry ครั้งเดียว
-			}
-			this.#wallet = {
-				initialBalance: 0,
-				transactions: []
-			};
-		} catch (error) {
-			toast.error('ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่');
-			throw error;
-		}
-	}
-
-	async clearAndReset(): Promise<void> {
-		if (!this.#auth.userId) throw new Error('Not authenticated');
-		const prevBalance = this.#wallet.initialBalance;
-		try {
-			await deleteAllTransactions(this.#auth.userId);
-			try {
-				await updateWallet(this.#auth.userId, { initial_balance: 0 });
+				wallet = await fetchWallet(auth.userId);
+				isLoaded = true;
 			} catch (error) {
-				// Transactions ลบไปแล้ว แต่ balance ยังเป็นค่าเดิม → พยายาม restore
-				await updateWallet(this.#auth.userId, { initial_balance: prevBalance }).catch((e) => {
-					console.error('Failed to restore wallet balance after clearAndReset failure', e);
-				});
+				toast.error('Failed to load wallet');
+				console.error(error);
+			} finally {
+				loading = false;
+			}
+		},
+
+		async adjustBalance(delta: number): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			const newBalance = wallet.initialBalance + delta;
+			try {
+				await updateInitialBalance(auth.userId, newBalance);
+				wallet = { ...wallet, initialBalance: newBalance };
+			} catch (error) {
+				toast.error('Failed to update balance');
 				throw error;
 			}
-			this.#wallet = {
-				initialBalance: 0,
-				transactions: []
-			};
-		} catch (error) {
-			toast.error('รีเซ็ตกระเป๋าไม่สำเร็จ กรุณาลองใหม่');
-			throw error;
+		},
+
+		async setInitialBalance(amount: number): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			try {
+				await updateInitialBalance(auth.userId, amount);
+				wallet = { ...wallet, initialBalance: amount };
+			} catch (error) {
+				toast.error('Failed to update initial balance');
+				throw error;
+			}
+		},
+
+		async addTransaction(
+			type: TransactionType,
+			amount: number,
+			note = '',
+			groupId: string | null = null,
+			roundNumber: number | null = null,
+			date?: string
+		): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			try {
+				const txn = await addTransactionRecord(auth.userId, {
+					type,
+					amount,
+					note,
+					groupId,
+					roundNumber,
+					date
+				});
+				wallet = { ...wallet, transactions: [...wallet.transactions, txn] };
+			} catch (error) {
+				toast.error('Failed to add transaction');
+				throw error;
+			}
+		},
+
+		async removeTransaction(id: string): Promise<void> {
+			try {
+				await removeTransactionRecord(id);
+				wallet = {
+					...wallet,
+					transactions: wallet.transactions.filter((t) => t.id !== id)
+				};
+			} catch (error) {
+				toast.error('Failed to remove transaction');
+				throw error;
+			}
+		},
+
+		clearAll(): void {
+			wallet = { initialBalance: 0, transactions: [] };
+			isLoaded = false;
+		},
+
+		async deleteAll(): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			try {
+				await deleteWalletAndTransactions(auth.userId);
+				wallet = { initialBalance: 0, transactions: [] };
+			} catch (error) {
+				toast.error('ลบข้อมูลไม่สำเร็จ กรุณาลองใหม่');
+				throw error;
+			}
+		},
+
+		async clearAndReset(): Promise<void> {
+			if (!auth.userId) throw new Error('Not authenticated');
+			const prevBalance = wallet.initialBalance;
+			try {
+				await resetWallet(auth.userId, prevBalance);
+				wallet = { initialBalance: 0, transactions: [] };
+			} catch (error) {
+				toast.error('รีเซ็ตกระเป๋าไม่สำเร็จ กรุณาลองใหม่');
+				throw error;
+			}
 		}
-	}
-}
-
-// Singleton instance
-let walletStoreInstance: WalletStore | null = null;
-
-export function useWalletStore(): WalletStore {
-	if (!walletStoreInstance) {
-		walletStoreInstance = new WalletStore();
-	}
-	return walletStoreInstance;
+	};
 }

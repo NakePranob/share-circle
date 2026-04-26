@@ -3,10 +3,26 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import type { useWalletActions } from '$features/wallet/composables';
+	import type { Wallet } from '$features/wallet/types';
+
+	interface WalletDialogsActions {
+		wallet: Wallet;
+		showBalanceDialog: boolean;
+		showDepositDialog: boolean;
+		showWithdrawDialog: boolean;
+		balanceInput: number;
+		txnAmount: number;
+		txnNote: string;
+		saveBalance: () => Promise<void>;
+		deposit: () => Promise<void>;
+		withdraw: () => Promise<void>;
+		openBalanceDialog: () => void;
+		openDepositDialog: () => void;
+		openWithdrawDialog: () => void;
+	}
 
 	interface Props {
-		actions: ReturnType<typeof useWalletActions>;
+		actions: WalletDialogsActions;
 	}
 
 	let { actions }: Props = $props();
@@ -51,7 +67,10 @@
 </Dialog.Root>
 
 <!-- Withdraw dialog -->
-<Dialog.Root open={actions.showWithdrawDialog} onOpenChange={(o) => (actions.showWithdrawDialog = o)}>
+<Dialog.Root
+	open={actions.showWithdrawDialog}
+	onOpenChange={(o) => (actions.showWithdrawDialog = o)}
+>
 	<Dialog.Content class="max-w-sm">
 		<Dialog.Header>
 			<Dialog.Title>เบิกเงิน</Dialog.Title>
@@ -67,7 +86,9 @@
 			</div>
 		</div>
 		<Dialog.Footer>
-			<Button onclick={actions.withdraw} disabled={actions.txnAmount <= 0} variant="destructive">เบิก</Button>
+			<Button onclick={actions.withdraw} disabled={actions.txnAmount <= 0} variant="destructive"
+				>เบิก</Button
+			>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

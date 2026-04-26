@@ -3,12 +3,11 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
-	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { formatCurrency, formatDate } from '$features/shared/utils';
 
 	const groupsStore = useGroupsStore();
-	const walletStore = useWalletStore();
-	import { useGroupStats, useGroupSummary } from '$features/groups/composables';
+	import { useGroupStats, useGroupSummary, useGroupActions } from '$features/groups/composables';
+	const actions = useGroupActions();
 	import { calculateRoundProfit, getMyRoundNumbers } from '$features/groups/utils/formatters';
 	import { toast } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
@@ -19,20 +18,28 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import { CircleCheck, Circle, ArrowLeft, EllipsisVertical, Pencil, Download, Copy } from '@lucide/svelte';
+	import {
+		CircleCheck,
+		Circle,
+		ArrowLeft,
+		EllipsisVertical,
+		Pencil,
+		Download,
+		Copy
+	} from '@lucide/svelte';
 	import type { Round } from '$lib/types';
 
 	const id = $derived(page.params.id ?? '');
 	const group = $derived(groupsStore.getById(id));
 	let loadedId = $state('');
 
-// Load rounds when id changes
-$effect.pre(() => {
-	if (id && id !== loadedId) {
-		groupsStore.loadGroupWithRounds(id);
-		loadedId = id;
-	}
-});
+	// Load rounds when id changes
+	$effect.pre(() => {
+		if (id && id !== loadedId) {
+			groupsStore.loadGroupWithRounds(id);
+			loadedId = id;
+		}
+	});
 
 	let editRound = $state<Round | null>(null);
 	let editDate = $state('');
@@ -74,14 +81,8 @@ $effect.pre(() => {
 
 	async function markPaid(roundNumber: number) {
 		if (!group) return;
-		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
-			await groupsStore.markRoundPaid(group.id, roundNumber);
-			if (round) {
-				await walletStore.adjustBalance(-round.paymentAmount);
-				await walletStore.addTransaction('payment', round.paymentAmount, '', group.id, roundNumber);
-			}
-			toast.success('บันทึกแล้ว');
+			await actions.markAsPaid(group.id, roundNumber);
 		} catch (error) {
 			console.error('Failed to mark as paid:', error);
 		}
@@ -89,20 +90,8 @@ $effect.pre(() => {
 
 	async function markPending(roundNumber: number) {
 		if (!group) return;
-		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
-			await groupsStore.markRoundPending(group.id, roundNumber);
-			if (round) {
-				await walletStore.adjustBalance(+round.paymentAmount);
-				// ลบ transaction ที่เกี่ยวข้อง
-				const paymentTxn = walletStore.wallet.transactions.find(
-					(t) => t.groupId === group.id && t.roundNumber === roundNumber && t.type === 'payment'
-				);
-				if (paymentTxn) {
-					await walletStore.removeTransaction(paymentTxn.id);
-				}
-			}
-			toast.success('ย้อนกลับเป็นรอแล้ว');
+			await actions.markAsPending(group.id, roundNumber);
 		} catch (error) {
 			console.error('Failed to mark as pending:', error);
 		}
@@ -110,15 +99,8 @@ $effect.pre(() => {
 
 	async function markReceived(roundNumber: number) {
 		if (!group) return;
-		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
-			await groupsStore.markRoundReceived(group.id, roundNumber);
-			if (round) {
-				const net = round.receiveAmount - (round.managementFee ?? 0);
-				await walletStore.adjustBalance(+net);
-				await walletStore.addTransaction('payout', net, '', group.id, roundNumber);
-			}
-			toast.success('บันทึกแล้ว');
+			await actions.markAsReceived(group.id, roundNumber);
 		} catch (error) {
 			console.error('Failed to mark as received:', error);
 		}
@@ -126,21 +108,8 @@ $effect.pre(() => {
 
 	async function markReceivedPending(roundNumber: number) {
 		if (!group) return;
-		const round = group.rounds.find((r) => r.roundNumber === roundNumber);
 		try {
-			await groupsStore.markRoundReceivedPending(group.id, roundNumber);
-			if (round) {
-				const net = round.receiveAmount - (round.managementFee ?? 0);
-				await walletStore.adjustBalance(-net);
-				// ลบ transaction ที่เกี่ยวข้อง
-				const payoutTxn = walletStore.wallet.transactions.find(
-					(t) => t.groupId === group.id && t.roundNumber === roundNumber && t.type === 'payout'
-				);
-				if (payoutTxn) {
-					await walletStore.removeTransaction(payoutTxn.id);
-				}
-			}
-			toast.success('ย้อนกลับเป็นรอแล้ว');
+			await actions.markReceivedPending(group.id, roundNumber);
 		} catch (error) {
 			console.error('Failed to mark as received pending:', error);
 		}
@@ -150,8 +119,7 @@ $effect.pre(() => {
 		if (!group) return;
 		isDeleting = true;
 		try {
-			await groupsStore.remove(group.id);
-			toast.success('ลบวงแล้ว');
+			await actions.deleteGroup(group.id);
 			goto('/groups');
 		} catch (error) {
 			console.error('Failed to delete group:', error);
@@ -164,8 +132,7 @@ $effect.pre(() => {
 		if (!group) return;
 		isToggling = true;
 		try {
-			await groupsStore.toggleActive(group.id);
-			toast.success(group.isActive ? 'ปิดวงแล้ว' : 'เปิดวงอีกครั้ง');
+			await actions.toggleActive(group.id);
 		} catch (error) {
 			console.error('Failed to toggle active:', error);
 		} finally {
@@ -186,7 +153,8 @@ $effect.pre(() => {
 	}
 
 	function exportGroupData(): string {
-		if (!group) return JSON.stringify({ group: null, exportedAt: new Date().toISOString() }, null, 2);
+		if (!group)
+			return JSON.stringify({ group: null, exportedAt: new Date().toISOString() }, null, 2);
 		const data = {
 			group: group,
 			exportedAt: new Date().toISOString()
@@ -234,7 +202,11 @@ $effect.pre(() => {
 	<div class="p-4">
 		<header class="mb-4 flex items-center justify-between">
 			<div class="flex items-center gap-3">
-				<button type="button" onclick={() => goto('/groups')} class="text-muted-foreground hover:text-foreground">
+				<button
+					type="button"
+					onclick={() => goto('/groups')}
+					class="text-muted-foreground hover:text-foreground"
+				>
 					<ArrowLeft class="h-5 w-5" />
 				</button>
 				<div>
@@ -253,13 +225,17 @@ $effect.pre(() => {
 				</DropdownMenu.Trigger>
 				<DropdownMenu.Content class="w-44">
 					<DropdownMenu.Item onclick={toggleActive} disabled={isToggling}>
-						{isToggling ? 'กำลังบันทึก...' : (group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง')}
+						{isToggling ? 'กำลังบันทึก...' : group.isActive ? 'ปิดวง' : 'เปิดวงอีกครั้ง'}
 					</DropdownMenu.Item>
-					<DropdownMenu.Item onclick={() => showDeleteDialog = true} variant="destructive" disabled={isDeleting}>
+					<DropdownMenu.Item
+						onclick={() => (showDeleteDialog = true)}
+						variant="destructive"
+						disabled={isDeleting}
+					>
 						ลบวง
 					</DropdownMenu.Item>
 					<DropdownMenu.Separator />
-					<DropdownMenu.Item onclick={() => showExportDialog = true}>
+					<DropdownMenu.Item onclick={() => (showExportDialog = true)}>
 						<Download class="mr-2 h-4 w-4" />
 						ส่งออก JSON
 					</DropdownMenu.Item>
@@ -271,7 +247,9 @@ $effect.pre(() => {
 		<div class="mb-4 grid grid-cols-2 gap-3">
 			<div class="rounded-xl bg-green-50 p-3 dark:bg-green-950/20">
 				<p class="text-xs text-muted-foreground">รับรวม</p>
-				<p class="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(groupSummary.sumReceive)}</p>
+				<p class="text-lg font-bold text-green-600 dark:text-green-400">
+					{formatCurrency(groupSummary.sumReceive)}
+				</p>
 			</div>
 			<div class="rounded-xl bg-red-50 p-3 dark:bg-red-950/20">
 				<p class="text-xs text-muted-foreground">จ่ายรวม</p>
@@ -312,7 +290,11 @@ $effect.pre(() => {
 		<h2 class="mb-3 font-semibold">รายการมือ</h2>
 		<div class="space-y-2">
 			{#each group.rounds as round (round.roundNumber)}
-				<div class="rounded-xl border bg-card p-4 {round.isMyRound ? 'border-green-200 dark:border-green-900' : 'border-border'} {round.status === 'paid' ? 'opacity-70' : ''}">
+				<div
+					class="rounded-xl border bg-card p-4 {round.isMyRound
+						? 'border-green-200 dark:border-green-900'
+						: 'border-border'} {round.status === 'paid' ? 'opacity-70' : ''}"
+				>
 					<div class="mb-2 flex items-center justify-between">
 						<div class="flex items-center gap-2">
 							{#if round.status === 'paid'}
@@ -322,14 +304,20 @@ $effect.pre(() => {
 							{/if}
 							<span class="font-medium">มือ {round.roundNumber}</span>
 							{#if round.isMyRound}
-								<span class="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-medium text-white">เรารับ</span>
+								<span
+									class="rounded-full bg-green-500 px-2 py-0.5 text-[10px] font-medium text-white"
+									>เรารับ</span
+								>
 							{/if}
 							<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
 						</div>
 						<div class="flex items-center gap-1">
 							<DropdownMenu.Root>
 								<DropdownMenu.Trigger>
-									<button type="button" class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+									<button
+										type="button"
+										class="rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+									>
 										<EllipsisVertical class="h-3.5 w-3.5" />
 									</button>
 								</DropdownMenu.Trigger>
@@ -339,7 +327,10 @@ $effect.pre(() => {
 										แก้ไข
 									</DropdownMenu.Item>
 									{#if round.isMyRound}
-										<DropdownMenu.Item onclick={() => removeMyRound(round.roundNumber)} variant="destructive">
+										<DropdownMenu.Item
+											onclick={() => removeMyRound(round.roundNumber)}
+											variant="destructive"
+										>
 											ยกเลิกมือรับ
 										</DropdownMenu.Item>
 									{:else}
@@ -356,12 +347,20 @@ $effect.pre(() => {
 						{#if round.isMyRound}
 							<div>
 								<p class="text-xs text-muted-foreground">เราได้รับ</p>
-								<p class="font-bold text-green-600 dark:text-green-400">{formatCurrency(round.receiveAmount)}</p>
+								<p class="font-bold text-green-600 dark:text-green-400">
+									{formatCurrency(round.receiveAmount)}
+								</p>
 							</div>
 							<div class="text-right">
 								<p class="text-xs text-muted-foreground">สุทธิ</p>
-								<p class="font-bold {calculateRoundProfit(round) >= 0 ? 'text-green-600' : 'text-red-500'}">
-									{calculateRoundProfit(round) >= 0 ? '+' : ''}{formatCurrency(calculateRoundProfit(round))}
+								<p
+									class="font-bold {calculateRoundProfit(round) >= 0
+										? 'text-green-600'
+										: 'text-red-500'}"
+								>
+									{calculateRoundProfit(round) >= 0 ? '+' : ''}{formatCurrency(
+										calculateRoundProfit(round)
+									)}
 								</p>
 							</div>
 						{:else}
@@ -379,33 +378,59 @@ $effect.pre(() => {
 					{#if round.isMyRound}
 						<div class="flex gap-2">
 							{#if round.status === 'pending'}
-								<Button size="sm" variant="outline" onclick={() => markPaid(round.roundNumber)} class="flex-1">
+								<Button
+									size="sm"
+									variant="outline"
+									onclick={() => markPaid(round.roundNumber)}
+									class="flex-1"
+								>
 									<CircleCheck class="mr-1 h-3 w-3" />
 									จ่ายแล้ว
 								</Button>
 							{:else}
-								<button type="button" onclick={() => markPending(round.roundNumber)} class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
+								<button
+									type="button"
+									onclick={() => markPending(round.roundNumber)}
+									class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+								>
 									↩ ย้อนกลับ (จ่าย)
 								</button>
 							{/if}
 							{#if round.payoutStatus !== 'received'}
-								<Button size="sm" onclick={() => markReceived(round.roundNumber)} class="flex-1 bg-green-600 hover:bg-green-700 text-white">
+								<Button
+									size="sm"
+									onclick={() => markReceived(round.roundNumber)}
+									class="flex-1 bg-green-600 text-white hover:bg-green-700"
+								>
 									<CircleCheck class="mr-1 h-3 w-3" />
 									รับแล้ว
 								</Button>
 							{:else}
-								<button type="button" onclick={() => markReceivedPending(round.roundNumber)} class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
+								<button
+									type="button"
+									onclick={() => markReceivedPending(round.roundNumber)}
+									class="flex-1 rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+								>
 									↩ ย้อนกลับ (รับ)
 								</button>
 							{/if}
 						</div>
 					{:else if round.status === 'pending'}
-						<Button size="sm" variant="outline" onclick={() => markPaid(round.roundNumber)} class="w-full">
+						<Button
+							size="sm"
+							variant="outline"
+							onclick={() => markPaid(round.roundNumber)}
+							class="w-full"
+						>
 							<CircleCheck class="mr-1 h-3 w-3" />
 							จ่ายแล้ว
 						</Button>
 					{:else}
-						<button type="button" onclick={() => markPending(round.roundNumber)} class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground">
+						<button
+							type="button"
+							onclick={() => markPending(round.roundNumber)}
+							class="w-full rounded-md py-1 text-xs text-muted-foreground hover:text-foreground"
+						>
 							↩ ย้อนกลับ
 						</button>
 					{/if}
@@ -476,7 +501,7 @@ $effect.pre(() => {
 				<AlertDialog.Cancel>ยกเลิก</AlertDialog.Cancel>
 				<AlertDialog.Action
 					onclick={deleteGroup}
-					class="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+					class="text-destructive-foreground bg-destructive hover:bg-destructive/90"
 					disabled={isDeleting}
 				>
 					{isDeleting ? 'กำลังลบ...' : 'ลบ'}

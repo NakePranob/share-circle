@@ -2,9 +2,9 @@ import type { Group } from '$features/groups/types';
 import { nextRoundOwe, totalIReceive, totalIOwe } from '$features/groups/utils/calculators';
 
 /**
- * Composable สำหรับจัดการ summary ของวง (ยอดรวม, กำไร/ขาดทุน)
- * ย้าย logic คำนวณจาก component มาที่นี่
- * @param getGroup - Callback function ที่ return Group หรือ undefined เพื่อหลีกเลี่ยง state_referenced_locally
+ * @param getGroup - Must be a reactive getter, not a plain value.
+ * Usage: useGroupSummary(() => group) where `group` is $derived.
+ * Callback pattern avoids Svelte 5 "state_referenced_locally" warning.
  */
 export function useGroupSummary(getGroup: () => Group | undefined) {
 	const group = $derived(getGroup());

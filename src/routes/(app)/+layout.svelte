@@ -57,7 +57,7 @@
 	<main class="flex-1 pb-20">
 		{#if !mounted || !auth.isReady || appData.loading || (auth.isAuthenticated && !appData.isLoaded)}
 			<div class="flex min-h-screen items-center justify-center">
-				<div class="flex flex-col items-center gap-2 animate-pulse">
+				<div class="flex animate-pulse flex-col items-center gap-2">
 					<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
 					<span class="text-sm text-muted-foreground">Loading{loadingDots}</span>
 				</div>
@@ -68,7 +68,7 @@
 	</main>
 
 	<nav
-		class="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm"
+		class="fixed right-0 bottom-0 left-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm"
 	>
 		<div class="mx-auto flex max-w-2xl">
 			{#each navItems as item (item.href)}

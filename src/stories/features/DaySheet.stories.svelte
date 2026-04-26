@@ -22,7 +22,8 @@
 
 <Story name="Closed" args={{ open: false }} />
 
-<Story name="OpenEmpty"
+<Story
+	name="OpenEmpty"
 	args={{
 		open: true,
 		selectedDay: {
@@ -34,7 +35,8 @@
 	}}
 />
 
-<Story name="OpenWithTransactions"
+<Story
+	name="OpenWithTransactions"
 	args={{
 		open: true,
 		selectedDay: {
@@ -71,7 +73,8 @@
 	}}
 />
 
-<Story name="NegativeBalance"
+<Story
+	name="NegativeBalance"
 	args={{
 		open: true,
 		selectedDay: {

@@ -18,7 +18,8 @@
 	let { selectedDay, open, groups, onClose, onMarkAsPaid, onMarkAsReceived }: Props = $props();
 
 	const groupTransactions = $derived(
-		selectedDay?.transactions.filter((t) => t.transaction.groupId && t.transaction.roundNumber) ?? []
+		selectedDay?.transactions.filter((t) => t.transaction.groupId && t.transaction.roundNumber) ??
+			[]
 	);
 
 	function getRound(groupId: string, roundNumber: number) {
@@ -39,7 +40,11 @@
 		<Sheet.Header>
 			<Sheet.Title>
 				{#if selectedDay}
-					{new Intl.DateTimeFormat('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }).format(new SvelteDate(selectedDay.date))}
+					{new Intl.DateTimeFormat('th-TH', {
+						day: 'numeric',
+						month: 'long',
+						year: 'numeric'
+					}).format(new SvelteDate(selectedDay.date))}
 				{/if}
 			</Sheet.Title>
 		</Sheet.Header>
@@ -47,10 +52,12 @@
 		{#if selectedDay}
 			{@const displayBalance = selectedDay.balance}
 			{@const isNegative = selectedDay.hasNegativeBalance}
-			<div class="mt-4 space-y-2 overflow-y-auto pb-8 px-4">
+			<div class="mt-4 space-y-2 overflow-y-auto px-4 pb-8">
 				<div class="mb-4 flex items-center justify-between rounded-lg bg-muted/50 p-3">
 					<span class="text-sm">ยอดคงเหลือ</span>
-					<span class="font-bold {isNegative ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
+					<span
+						class="font-bold {isNegative ? 'text-red-500' : 'text-green-600 dark:text-green-400'}"
+					>
 						{formatCurrency(displayBalance)}
 					</span>
 				</div>
@@ -59,12 +66,35 @@
 					<p class="py-4 text-center text-sm text-muted-foreground">ไม่มีรายการในวันนี้</p>
 				{:else}
 					{#each groupTransactions as { transaction, groupName } (transaction.id)}
-						{@const round = transaction.groupId && transaction.roundNumber ? getRound(transaction.groupId, transaction.roundNumber) : null}
-						{@const isPaid = transaction.type === 'payment' ? round?.status === 'paid' : transaction.type === 'payout' ? round?.payoutStatus === 'received' : true}
-						{@const canPay = !isPaid && transaction.type === 'payment' && transaction.groupId && transaction.roundNumber}
-						{@const canReceive = !isPaid && transaction.type === 'payout' && transaction.groupId && transaction.roundNumber}
-						{@const displayAmount = transaction.type === 'payout' && round?.receiveAmount ? round.receiveAmount : transaction.amount}
-						<div class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid ? 'bg-muted/30' : ''}">
+						{@const round =
+							transaction.groupId && transaction.roundNumber
+								? getRound(transaction.groupId, transaction.roundNumber)
+								: null}
+						{@const isPaid =
+							transaction.type === 'payment'
+								? round?.status === 'paid'
+								: transaction.type === 'payout'
+									? round?.payoutStatus === 'received'
+									: true}
+						{@const canPay =
+							!isPaid &&
+							transaction.type === 'payment' &&
+							transaction.groupId &&
+							transaction.roundNumber}
+						{@const canReceive =
+							!isPaid &&
+							transaction.type === 'payout' &&
+							transaction.groupId &&
+							transaction.roundNumber}
+						{@const displayAmount =
+							transaction.type === 'payout' && round?.receiveAmount
+								? round.receiveAmount
+								: transaction.amount}
+						<div
+							class="flex items-center justify-between rounded-lg border border-border p-3 {isPaid
+								? 'bg-muted/30'
+								: ''}"
+						>
 							<div>
 								<p class="text-sm font-medium">{txnLabel(transaction.type)}</p>
 								<p class="text-xs text-muted-foreground">
@@ -73,15 +103,20 @@
 										<span class="italic"> (ประมาณ)</span>
 									{/if}
 									{#if !isPaid && transaction.type === 'payment'}
-										<span class="ml-2 text-red-600 font-medium">• ยังไม่จ่าย</span>
+										<span class="ml-2 font-medium text-red-600">• ยังไม่จ่าย</span>
 									{/if}
 									{#if !isPaid && transaction.type === 'payout'}
-										<span class="ml-2 text-green-600 font-medium">• ยังไม่รับ</span>
+										<span class="ml-2 font-medium text-green-600">• ยังไม่รับ</span>
 									{/if}
 								</p>
 							</div>
 							<div class="flex items-center gap-2">
-								<p class="font-medium {transaction.type === 'payment' || transaction.type === 'withdrawal' ? 'text-red-500' : 'text-green-600 dark:text-green-400'}">
+								<p
+									class="font-medium {transaction.type === 'payment' ||
+									transaction.type === 'withdrawal'
+										? 'text-red-500'
+										: 'text-green-600 dark:text-green-400'}"
+								>
 									{transaction.type === 'payment' || transaction.type === 'withdrawal' ? '-' : '+'}
 									{formatCurrency(displayAmount)}
 								</p>

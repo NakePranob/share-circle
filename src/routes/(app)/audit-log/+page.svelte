@@ -24,13 +24,13 @@
 	{:else}
 		<Tabs value="all">
 			<TabsList class="w-full space-x-1">
-				<TabsTrigger value="all" class="flex-1 bg-background rounded-e">
+				<TabsTrigger value="all" class="flex-1 rounded-e bg-background">
 					รวม ({allTransactions.length})
 				</TabsTrigger>
-				<TabsTrigger value="manual" class="flex-1 bg-background rounded-none">
+				<TabsTrigger value="manual" class="flex-1 rounded-none bg-background">
 					เติม/เบิก ({manualTransactions.length})
 				</TabsTrigger>
-				<TabsTrigger value="groups" class="flex-1 bg-background rounded-s">
+				<TabsTrigger value="groups" class="flex-1 rounded-s bg-background">
 					วงแชร์ ({groupTransactions.length})
 				</TabsTrigger>
 			</TabsList>

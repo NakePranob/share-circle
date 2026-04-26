@@ -5,7 +5,10 @@ export type Transaction = Database['public']['Tables']['transactions']['Row'];
 export type TransactionInsert = Database['public']['Tables']['transactions']['Insert'];
 export type TransactionUpdate = Database['public']['Tables']['transactions']['Update'];
 
-export async function getTransactions(userId: string, options?: { groupId?: string; limit?: number }) {
+export async function getTransactions(
+	userId: string,
+	options?: { groupId?: string; limit?: number }
+) {
 	let query = supabase
 		.from('transactions')
 		.select('*')
@@ -33,11 +36,7 @@ export async function getTransactionById(id: string) {
 }
 
 export async function createTransaction(transaction: TransactionInsert) {
-	const { data, error } = await supabase
-		.from('transactions')
-		.insert(transaction)
-		.select()
-		.single();
+	const { data, error } = await supabase.from('transactions').insert(transaction).select().single();
 
 	if (error) throw error;
 	return data;

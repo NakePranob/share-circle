@@ -32,9 +32,7 @@
 		<DialogContent>
 			<DialogHeader>
 				<DialogTitle>สร้างวงแชร์ใหม่</DialogTitle>
-				<DialogDescription>
-					กรอกข้อมูลเพื่อเริ่มวงแชร์ใหม่
-				</DialogDescription>
+				<DialogDescription>กรอกข้อมูลเพื่อเริ่มวงแชร์ใหม่</DialogDescription>
 			</DialogHeader>
 			<div class="grid gap-4 py-4">
 				<div class="grid gap-2">
@@ -62,9 +60,7 @@
 		<DialogContent>
 			<DialogHeader>
 				<DialogTitle>แก้ไขข้อมูล</DialogTitle>
-				<DialogDescription>
-					แก้ไขข้อมูลส่วนตัวของคุณ
-				</DialogDescription>
+				<DialogDescription>แก้ไขข้อมูลส่วนตัวของคุณ</DialogDescription>
 			</DialogHeader>
 			<div class="grid gap-4 py-4">
 				<div class="grid gap-2">

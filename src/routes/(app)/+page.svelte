@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { useGroupsStore } from '$features/groups/stores/groups.svelte';
-	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import { formatCurrency, formatDate, thaiDateToday } from '$features/shared/utils';
 
 	const groupsStore = useGroupsStore();
-	const walletStore = useWalletStore();
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -19,9 +17,9 @@
 		TrendingUp,
 		Users
 	} from '@lucide/svelte';
-	import { toast } from 'svelte-sonner';
 	import { useDashboard, useUpcomingRounds } from '$features/dashboard/composables';
-	import { useGroupStats } from '$features/groups/composables';
+	import { useGroupStats, useGroupActions } from '$features/groups/composables';
+	const actions = useGroupActions();
 	import { cn } from '$lib/utils';
 
 	const now = new Date();
@@ -48,13 +46,7 @@
 	let listOpen = $state(true);
 
 	async function markAsPaid(groupId: string, roundNumber: number) {
-		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
-		await groupsStore.markRoundPaid(groupId, roundNumber);
-		if (round) {
-			await walletStore.adjustBalance(-round.paymentAmount);
-			await walletStore.addTransaction('payment', round.paymentAmount, '', groupId, roundNumber);
-		}
-		toast.success('จ่ายเงินเรียบร้อย');
+		await actions.markAsPaid(groupId, roundNumber);
 		paymentSheetOpen = false;
 		setTimeout(() => {
 			selectedPayment = null;
@@ -62,14 +54,7 @@
 	}
 
 	async function markAsReceived(groupId: string, roundNumber: number) {
-		const round = groupsStore.getById(groupId)?.rounds.find((r) => r.roundNumber === roundNumber);
-		await groupsStore.markRoundReceived(groupId, roundNumber);
-		if (round) {
-			const net = round.receiveAmount - (round.managementFee ?? 0);
-			await walletStore.adjustBalance(+net);
-			await walletStore.addTransaction('payout', net, '', groupId, roundNumber);
-		}
-		toast.success('รับเงินเรียบร้อย');
+		await actions.markAsReceived(groupId, roundNumber);
 		paymentSheetOpen = false;
 		setTimeout(() => {
 			selectedPayment = null;

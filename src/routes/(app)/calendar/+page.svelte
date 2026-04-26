@@ -70,7 +70,10 @@
 		todayStr={calendar.todayStr}
 		onPrevMonth={calendar.prevMonth}
 		onNextMonth={calendar.nextMonth}
-		onClickDay={(date) => { calendar.clickDay(date); sheetOpen = true; }}
+		onClickDay={(date) => {
+			calendar.clickDay(date);
+			sheetOpen = true;
+		}}
 	/>
 </div>
 
@@ -78,7 +81,12 @@
 	selectedDay={calendar.selectedDay}
 	open={sheetOpen}
 	groups={groupsStore.groups}
-	onClose={() => { sheetOpen = false; setTimeout(() => { calendar.selectedDay = null; }, 300); }}
+	onClose={() => {
+		sheetOpen = false;
+		setTimeout(() => {
+			calendar.selectedDay = null;
+		}, 300);
+	}}
 	onMarkAsPaid={markAsPaid}
 	onMarkAsReceived={markAsReceived}
 />

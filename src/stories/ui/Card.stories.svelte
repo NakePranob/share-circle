@@ -1,6 +1,14 @@
 <script module>
 	import { defineMeta } from '@storybook/addon-svelte-csf';
-	import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardAction } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardHeader,
+		CardTitle,
+		CardDescription,
+		CardContent,
+		CardFooter,
+		CardAction
+	} from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 

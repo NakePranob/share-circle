@@ -34,9 +34,7 @@ export function useAuditLog() {
 		allTransactions.filter((e) => e.transaction.groupId === null)
 	);
 
-	const groupTransactions = $derived(
-		allTransactions.filter((e) => e.transaction.groupId !== null)
-	);
+	const groupTransactions = $derived(allTransactions.filter((e) => e.transaction.groupId !== null));
 
 	return {
 		get allTransactions() {

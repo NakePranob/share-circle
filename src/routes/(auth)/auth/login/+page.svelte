@@ -48,8 +48,10 @@
 </script>
 
 {#if isInLineApp}
-	<div class="fixed z-50 left-0 top-0 bg-background flex w-screen h-screen items-center justify-center">
-		<div class="flex flex-col items-center gap-2 animate-pulse">
+	<div
+		class="fixed top-0 left-0 z-50 flex h-screen w-screen items-center justify-center bg-background"
+	>
+		<div class="flex animate-pulse flex-col items-center gap-2">
 			<Loader2 class="h-10 w-10 animate-spin text-lime-600" />
 			<span class="text-sm text-muted-foreground">Loading{loadingDots}</span>
 		</div>
@@ -65,13 +67,7 @@
 			<form onsubmit={handleSubmit} class="space-y-4">
 				<div class="space-y-2">
 					<Label for="email">อีเมล</Label>
-					<Input
-						id="email"
-						type="email"
-						placeholder="your@email.com"
-						bind:value={email}
-						required
-					/>
+					<Input id="email" type="email" placeholder="your@email.com" bind:value={email} required />
 				</div>
 				<div class="space-y-2">
 					<Label for="password">รหัสผ่าน</Label>

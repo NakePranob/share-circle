@@ -160,14 +160,14 @@
 		<div class="space-y-4">
 			<button
 				onclick={migrate}
-				class="w-full rounded-lg bg-primary px-4 py-3 text-primary-foreground font-medium hover:bg-primary/90"
+				class="w-full rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground hover:bg-primary/90"
 			>
 				เริ่ม Migration
 			</button>
 
 			<button
 				onclick={clearLocalStorage}
-				class="w-full rounded-lg border border-border bg-destructive/10 px-4 py-3 text-destructive font-medium hover:bg-destructive/20"
+				class="w-full rounded-lg border border-border bg-destructive/10 px-4 py-3 font-medium text-destructive hover:bg-destructive/20"
 			>
 				ลบข้อมูล localStorage (ไม่ migrate)
 			</button>
@@ -181,23 +181,27 @@
 			<p class="text-center text-lg font-semibold">{progress}%</p>
 		</div>
 	{:else if status === 'success'}
-		<div class="rounded-lg border border-green-200 bg-green-50 p-6 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200">
+		<div
+			class="rounded-lg border border-green-200 bg-green-50 p-6 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200"
+		>
 			<h2 class="mb-2 text-lg font-semibold">Migration เสร็จสมบูรณ์!</h2>
 			<p class="text-sm">ข้อมูลทั้งหมดถูกย้ายไป Supabase แล้ว คุณสามารถใช้งานแอปได้ตามปกติ</p>
 			<a
 				href="/"
-				class="mt-4 inline-block rounded-lg bg-green-600 px-4 py-2 text-white font-medium hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+				class="mt-4 inline-block rounded-lg bg-green-600 px-4 py-2 font-medium text-white hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
 			>
 				กลับไปหน้าหลัก
 			</a>
 		</div>
 	{:else if status === 'error'}
-		<div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+		<div
+			class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200"
+		>
 			<h2 class="mb-2 text-lg font-semibold">Migration ล้มเหลว</h2>
 			<p class="mb-4 text-sm">{error}</p>
 			<button
 				onclick={() => (status = 'idle')}
-				class="rounded-lg bg-red-600 px-4 py-2 text-white font-medium hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
+				class="rounded-lg bg-red-600 px-4 py-2 font-medium text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
 			>
 				ลองใหม่
 			</button>

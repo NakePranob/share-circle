@@ -9,7 +9,13 @@
 	import { formatCurrency, formatDate } from '$lib/utils/calculator';
 	import { groupFormSchema } from '$features/groups/schemas/groupFormSchema';
 	import type { GroupFormData } from '$features/groups/schemas/groupFormSchema';
-	import { buildRoundsFromFormData, nextRoundOwe, totalIReceive, totalIOwe, totalManagementFee } from '$features/groups/utils/calculators';
+	import {
+		buildRoundsFromFormData,
+		nextRoundOwe,
+		totalIReceive,
+		totalIOwe,
+		totalManagementFee
+	} from '$features/groups/utils/calculators';
 	import { SvelteDate } from 'svelte/reactivity';
 	import {
 		DEFAULT_TOTAL_ROUNDS,
@@ -51,7 +57,13 @@
 
 	const rounds = $derived(buildRoundsFromFormData(formData));
 
-	const previewGroup = $derived({ id: '', name: form.groupName, rounds, createdAt: '', isActive: true });
+	const previewGroup = $derived({
+		id: '',
+		name: form.groupName,
+		rounds,
+		createdAt: '',
+		isActive: true
+	});
 
 	const myRoundNums = $derived(rounds.filter((r) => r.isMyRound).map((r) => r.roundNumber));
 	const owePerRound = $derived(nextRoundOwe(previewGroup));
@@ -86,7 +98,10 @@
 	}
 
 	function resetForm() {
-		Object.assign(form, { ...initialFormState, startDate: new SvelteDate().toISOString().split('T')[0] });
+		Object.assign(form, {
+			...initialFormState,
+			startDate: new SvelteDate().toISOString().split('T')[0]
+		});
 		errors = {};
 	}
 
@@ -97,7 +112,15 @@
 	}
 </script>
 
-<form onsubmit={(e: Event) => { e.preventDefault(); if (validate()) { showConfirmDialog = true; } }} class="space-y-6">
+<form
+	onsubmit={(e: Event) => {
+		e.preventDefault();
+		if (validate()) {
+			showConfirmDialog = true;
+		}
+	}}
+	class="space-y-6"
+>
 	<!-- Name -->
 	<div class="space-y-2">
 		<Label for="groupName">ชื่อวง</Label>
@@ -120,12 +143,24 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div class="space-y-2">
 				<Label for="totalRounds">จำนวนมือทั้งหมด</Label>
-				<Input id="totalRounds" type="number" min="2" bind:value={form.totalRounds} class="text-center" />
+				<Input
+					id="totalRounds"
+					type="number"
+					min="2"
+					bind:value={form.totalRounds}
+					class="text-center"
+				/>
 				{#if errors.totalRounds}<p class="text-xs text-destructive">{errors.totalRounds}</p>{/if}
 			</div>
 			<div class="space-y-2">
 				<Label for="frequency">ความถี่ (วัน)</Label>
-				<Input id="frequency" type="number" min="1" bind:value={form.frequency} class="text-center" />
+				<Input
+					id="frequency"
+					type="number"
+					min="1"
+					bind:value={form.frequency}
+					class="text-center"
+				/>
 				{#if errors.frequency}<p class="text-xs text-destructive">{errors.frequency}</p>{/if}
 			</div>
 		</div>
@@ -133,13 +168,22 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div class="space-y-2">
 				<Label for="receiveAmountPerRound">ยอดรับต่อมือ (บาท)</Label>
-				<Input id="receiveAmountPerRound" type="number" min="1" bind:value={form.receiveAmountPerRound} />
-				{#if errors.receiveAmountPerRound}<p class="text-xs text-destructive">{errors.receiveAmountPerRound}</p>{/if}
+				<Input
+					id="receiveAmountPerRound"
+					type="number"
+					min="1"
+					bind:value={form.receiveAmountPerRound}
+				/>
+				{#if errors.receiveAmountPerRound}<p class="text-xs text-destructive">
+						{errors.receiveAmountPerRound}
+					</p>{/if}
 			</div>
 			<div class="space-y-2">
 				<Label for="managementFee">ค่าดูแลวง/มือ (บาท)</Label>
 				<Input id="managementFee" type="number" min="0" bind:value={form.managementFee} />
-				{#if errors.managementFee}<p class="text-xs text-destructive">{errors.managementFee}</p>{/if}
+				{#if errors.managementFee}<p class="text-xs text-destructive">
+						{errors.managementFee}
+					</p>{/if}
 			</div>
 		</div>
 
@@ -148,11 +192,13 @@
 			<RadioGroup.Root bind:value={form.playMode}>
 				<div class="flex items-center space-x-2">
 					<RadioGroup.Item value="fixed" id="fixed" />
-					<Label for="fixed" class="font-normal cursor-pointer">แบบคงที่ - จ่ายเท่ากันทุกมือ</Label>
+					<Label for="fixed" class="cursor-pointer font-normal">แบบคงที่ - จ่ายเท่ากันทุกมือ</Label>
 				</div>
 				<div class="flex items-center space-x-2">
 					<RadioGroup.Item value="stepped" id="stepped" />
-					<Label for="stepped" class="font-normal cursor-pointer">แบบขั้นบันได - จ่ายไม่เท่ากัน</Label>
+					<Label for="stepped" class="cursor-pointer font-normal"
+						>แบบขั้นบันได - จ่ายไม่เท่ากัน</Label
+					>
 				</div>
 			</RadioGroup.Root>
 		</div>
@@ -161,21 +207,25 @@
 			<div class="space-y-2">
 				<Label for="fixedPaymentAmount">ยอดจ่ายต่อมือ (บาท)</Label>
 				<Input id="fixedPaymentAmount" type="number" min="1" bind:value={form.fixedPaymentAmount} />
-				{#if errors.fixedPaymentAmount}<p class="text-xs text-destructive">{errors.fixedPaymentAmount}</p>{/if}
+				{#if errors.fixedPaymentAmount}<p class="text-xs text-destructive">
+						{errors.fixedPaymentAmount}
+					</p>{/if}
 			</div>
 		{:else}
 			<div class="space-y-2">
 				<Label>ยอดจ่ายต่อมือ (บาท)</Label>
-				{#if errors.steppedPayments}<p class="text-xs text-destructive">{errors.steppedPayments}</p>{/if}
+				{#if errors.steppedPayments}<p class="text-xs text-destructive">
+						{errors.steppedPayments}
+					</p>{/if}
 				<div class="grid grid-cols-4 gap-2">
 					{#each Array.from({ length: form.totalRounds }), i (i)}
 						<div class="space-y-1">
-							<p class="text-xs text-muted-foreground text-center">มือ {i + 1}</p>
+							<p class="text-center text-xs text-muted-foreground">มือ {i + 1}</p>
 							<Input
 								type="number"
 								min="1"
 								bind:value={form.steppedPayments[i]}
-								class="h-8 text-sm text-center"
+								class="h-8 text-center text-sm"
 							/>
 						</div>
 					{/each}
@@ -190,7 +240,9 @@
 	<div class="space-y-3">
 		<div class="flex items-center justify-between">
 			<Label>เลือกมือที่รับ</Label>
-			<span class="text-xs text-muted-foreground">{form.selectedRounds.length}/{form.totalRounds} มือ</span>
+			<span class="text-xs text-muted-foreground"
+				>{form.selectedRounds.length}/{form.totalRounds} มือ</span
+			>
 		</div>
 
 		{#if errors.selectedRounds}<p class="text-xs text-destructive">{errors.selectedRounds}</p>{/if}
@@ -200,14 +252,22 @@
 				<button
 					type="button"
 					onclick={() => toggleRound(i)}
-					class="rounded-lg border p-3 text-left transition-colors {form.selectedRounds.includes(i) ? 'border-green-500 bg-green-50 dark:bg-green-950/20' : 'border-border hover:bg-muted/50'}"
+					class="rounded-lg border p-3 text-left transition-colors {form.selectedRounds.includes(i)
+						? 'border-green-500 bg-green-50 dark:bg-green-950/20'
+						: 'border-border hover:bg-muted/50'}"
 				>
-					<div class="flex items-center justify-between mb-1">
+					<div class="mb-1 flex items-center justify-between">
 						<span class="font-medium">มือ {i + 1}</span>
 						<Checkbox checked={form.selectedRounds.includes(i)} class="pointer-events-none" />
 					</div>
 					<p class="text-xs text-muted-foreground">{formatDate(round.date)}</p>
-					<p class="text-xs text-muted-foreground">จ่าย: {formatCurrency(form.playMode === 'fixed' ? (form.fixedPaymentAmount ?? 0) : (form.steppedPayments[i] ?? 0))}</p>
+					<p class="text-xs text-muted-foreground">
+						จ่าย: {formatCurrency(
+							form.playMode === 'fixed'
+								? (form.fixedPaymentAmount ?? 0)
+								: (form.steppedPayments[i] ?? 0)
+						)}
+					</p>
 				</button>
 			{/each}
 		</div>
@@ -215,7 +275,7 @@
 
 	<!-- Summary preview -->
 	{#if myRoundNums.length > 0}
-		<div class="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+		<div class="space-y-3 rounded-xl border border-border bg-muted/30 p-4">
 			<p class="text-sm font-medium">สรุป</p>
 
 			<div class="grid grid-cols-2 gap-3 text-sm">
@@ -284,7 +344,9 @@
 
 			<div class="space-y-2">
 				<p class="text-sm font-medium">รูปแบบการเล่น</p>
-				<p class="text-sm text-muted-foreground">{form.playMode === 'fixed' ? 'แบบคงที่' : 'แบบขั้นบันได'}</p>
+				<p class="text-sm text-muted-foreground">
+					{form.playMode === 'fixed' ? 'แบบคงที่' : 'แบบขั้นบันได'}
+				</p>
 			</div>
 
 			<div class="space-y-2">
@@ -301,12 +363,17 @@
 				<p class="text-sm font-medium">ยอดจ่ายแต่ละมือ</p>
 				<div class="max-h-48 overflow-y-auto rounded-lg border border-border">
 					{#each rounds as round, i (i)}
-						<div class="flex items-center justify-between border-b border-border px-3 py-2 last:border-b-0">
+						<div
+							class="flex items-center justify-between border-b border-border px-3 py-2 last:border-b-0"
+						>
 							<div class="flex items-center gap-3">
 								<span class="text-xs font-medium text-muted-foreground">มือ {i + 1}</span>
 								<span class="text-xs text-muted-foreground">{formatDate(round.date)}</span>
 								{#if round.isMyRound}
-									<span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">รับ</span>
+									<span
+										class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+										>รับ</span
+									>
 								{/if}
 							</div>
 							<span class="text-sm font-medium">{formatCurrency(round.paymentAmount)}</span>
@@ -316,7 +383,7 @@
 			</div>
 
 			{#if myRoundNums.length > 0}
-				<div class="rounded-lg bg-muted p-4 space-y-2">
+				<div class="space-y-2 rounded-lg bg-muted p-4">
 					<div class="flex justify-between text-sm">
 						<span class="text-muted-foreground">เราได้รับรวม</span>
 						<span class="font-bold text-green-600">{formatCurrency(sumReceive)}</span>

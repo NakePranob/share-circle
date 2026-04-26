@@ -31,9 +31,7 @@
 		<SheetContent side="right">
 			<SheetHeader>
 				<SheetTitle>แก้ไขโปรไฟล์</SheetTitle>
-				<SheetDescription>
-					แก้ไขข้อมูลส่วนตัวของคุณ
-				</SheetDescription>
+				<SheetDescription>แก้ไขข้อมูลส่วนตัวของคุณ</SheetDescription>
 			</SheetHeader>
 			<div class="py-4">
 				<p>เนื้อหาของ Sheet</p>
@@ -52,11 +50,9 @@
 		<SheetContent side="left">
 			<SheetHeader>
 				<SheetTitle>เมนู</SheetTitle>
-				<SheetDescription>
-					เลือกเมนูที่ต้องการ
-				</SheetDescription>
+				<SheetDescription>เลือกเมนูที่ต้องการ</SheetDescription>
 			</SheetHeader>
-			<div class="py-4 space-y-2">
+			<div class="space-y-2 py-4">
 				<Button variant="ghost" class="w-full justify-start">โปรไฟล์</Button>
 				<Button variant="ghost" class="w-full justify-start">ตั้งค่า</Button>
 				<Button variant="ghost" class="w-full justify-start">ออกจากระบบ</Button>
@@ -78,11 +74,9 @@
 		<SheetContent side="right">
 			<SheetHeader>
 				<SheetTitle>สร้างวงแชร์</SheetTitle>
-				<SheetDescription>
-					กรอกข้อมูลเพื่อเริ่มวงแชร์ใหม่
-				</SheetDescription>
+				<SheetDescription>กรอกข้อมูลเพื่อเริ่มวงแชร์ใหม่</SheetDescription>
 			</SheetHeader>
-			<div class="py-4 space-y-4">
+			<div class="space-y-4 py-4">
 				<p>เนื้อหาของ Sheet</p>
 			</div>
 			<SheetFooter>

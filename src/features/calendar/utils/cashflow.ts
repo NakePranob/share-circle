@@ -163,8 +163,11 @@ function buildDayMap(
 			day.transactions.push(entry);
 			// only accumulate balance from today onwards — past is baked into initialBalance
 			// if (dateStr >= todayStr ) {
-				const { type, amount } = entry.transaction;
-				balance += type === TRANSACTION_TYPE.PAYMENT || type === TRANSACTION_TYPE.WITHDRAWAL ? -amount : amount;
+			const { type, amount } = entry.transaction;
+			balance +=
+				type === TRANSACTION_TYPE.PAYMENT || type === TRANSACTION_TYPE.WITHDRAWAL
+					? -amount
+					: amount;
 			// }
 		}
 
@@ -176,17 +179,32 @@ function buildDayMap(
 }
 
 // Projected = pending rounds only, applied forward from current initialBalance
-export function buildProjectedCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
+export function buildProjectedCashFlow(
+	groups: Group[],
+	wallet: Wallet,
+	year: number,
+	month: number
+): Map<string, DayData> {
 	const groupMap = new Map(groups.map((g) => [g.id, g.name]));
 	return buildDayMap(pendingTransactions(groups), wallet, year, month, groupMap);
 }
 
 // paidCashFlow kept for backwards compatibility with DaySheet — returns same as projected
-export function buildPaidCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
+export function buildPaidCashFlow(
+	groups: Group[],
+	wallet: Wallet,
+	year: number,
+	month: number
+): Map<string, DayData> {
 	return buildProjectedCashFlow(groups, wallet, year, month);
 }
 
-export function buildCashFlow(groups: Group[], wallet: Wallet, year: number, month: number): Map<string, DayData> {
+export function buildCashFlow(
+	groups: Group[],
+	wallet: Wallet,
+	year: number,
+	month: number
+): Map<string, DayData> {
 	const groupMap = new Map(groups.map((g) => [g.id, g.name]));
 	return buildDayMap(syntheticTransactions(groups), wallet, year, month, groupMap);
 }

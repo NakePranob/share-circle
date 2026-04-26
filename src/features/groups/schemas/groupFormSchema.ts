@@ -4,7 +4,7 @@ export const PLAY_MODE = {
 	FIXED: 'fixed',
 	STEPPED: 'stepped'
 } as const;
-export type PlayMode = typeof PLAY_MODE[keyof typeof PLAY_MODE];
+export type PlayMode = (typeof PLAY_MODE)[keyof typeof PLAY_MODE];
 
 export const groupFormSchema = z.object({
 	groupName: z.string().min(1, 'กรุณากรอกชื่อวง').trim(),

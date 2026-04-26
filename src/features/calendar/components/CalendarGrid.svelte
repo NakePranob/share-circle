@@ -17,7 +17,16 @@
 		onClickDay: (date: string) => void;
 	}
 
-	let { calendarDays, monthLabel, projectedCashFlow, groups, todayStr, onPrevMonth, onNextMonth, onClickDay }: Props = $props();
+	let {
+		calendarDays,
+		monthLabel,
+		projectedCashFlow,
+		groups,
+		todayStr,
+		onPrevMonth,
+		onNextMonth,
+		onClickDay
+	}: Props = $props();
 </script>
 
 <div class="mb-3 flex items-center justify-between">
@@ -30,7 +39,7 @@
 	</button>
 </div>
 
-<Card class="p-0 gap-0 overflow-hidden">
+<Card class="gap-0 overflow-hidden p-0">
 	<div class="grid grid-cols-7 bg-zinc-200">
 		{#each ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'] as dayName (dayName)}
 			<div class="py-2 text-center text-xs font-medium text-muted-foreground">{dayName}</div>
@@ -45,7 +54,9 @@
 			{@const isLastRow = currentRow === lastRow}
 			{#if cell === null}
 				<div
-					class="min-h-16 border-b border-border bg-muted/20 {isLastRow ? 'border-b-0!' : ''} {!isSaturday ? 'border-r' : ''}"
+					class="min-h-16 border-b border-border bg-muted/20 {isLastRow
+						? 'border-b-0!'
+						: ''} {!isSaturday ? 'border-r' : ''}"
 				></div>
 			{:else}
 				<DayCell
@@ -65,8 +76,16 @@
 </Card>
 
 <div class="mt-3 flex gap-4 text-xs text-muted-foreground">
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-red-400"></span> ต้องจ่าย</div>
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-green-400"></span> ต้องรับ</div>
-	<div class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-gray-400"></span> เสร็จแล้ว</div>
-	<div class="flex items-center gap-1"><span class="text-red-500 font-bold">สีแดง</span> = ยอดติดลบ</div>
+	<div class="flex items-center gap-1">
+		<span class="h-2 w-2 rounded-full bg-red-400"></span> ต้องจ่าย
+	</div>
+	<div class="flex items-center gap-1">
+		<span class="h-2 w-2 rounded-full bg-green-400"></span> ต้องรับ
+	</div>
+	<div class="flex items-center gap-1">
+		<span class="h-2 w-2 rounded-full bg-gray-400"></span> เสร็จแล้ว
+	</div>
+	<div class="flex items-center gap-1">
+		<span class="font-bold text-red-500">สีแดง</span> = ยอดติดลบ
+	</div>
 </div>

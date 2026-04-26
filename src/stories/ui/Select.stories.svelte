@@ -28,9 +28,7 @@
 <Story name="Default">
 	<div class="w-72">
 		<Select type="single">
-			<SelectTrigger>
-				เลือกตัวเลือก
-			</SelectTrigger>
+			<SelectTrigger>เลือกตัวเลือก</SelectTrigger>
 			<SelectContent>
 				<SelectItem value="option1">ตัวเลือกที่ 1</SelectItem>
 				<SelectItem value="option2">ตัวเลือกที่ 2</SelectItem>
@@ -44,9 +42,7 @@
 	<div class="grid w-72 items-center gap-2">
 		<Label for="framework">เฟรมเวิร์ก</Label>
 		<Select type="single">
-			<SelectTrigger id="framework">
-				เลือกเฟรมเวิร์ก
-			</SelectTrigger>
+			<SelectTrigger id="framework">เลือกเฟรมเวิร์ก</SelectTrigger>
 			<SelectContent>
 				<SelectItem value="svelte">Svelte</SelectItem>
 				<SelectItem value="react">React</SelectItem>
@@ -60,9 +56,7 @@
 <Story name="WithGroups">
 	<div class="w-72">
 		<Select type="single">
-			<SelectTrigger>
-				เลือกหมวดหมู่
-			</SelectTrigger>
+			<SelectTrigger>เลือกหมวดหมู่</SelectTrigger>
 			<SelectContent>
 				<SelectGroup>
 					<SelectLabel>ผัก</SelectLabel>
@@ -100,9 +94,7 @@
 		<div class="grid gap-2">
 			<Label for="status">สถานะ</Label>
 			<Select type="single">
-				<SelectTrigger id="status">
-					เลือกสถานะ
-				</SelectTrigger>
+				<SelectTrigger id="status">เลือกสถานะ</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="active">ใช้งานอยู่</SelectItem>
 					<SelectItem value="inactive">ไม่ได้ใช้งาน</SelectItem>
@@ -113,9 +105,7 @@
 		<div class="grid gap-2">
 			<Label for="priority">ความสำคัญ</Label>
 			<Select type="single">
-				<SelectTrigger id="priority">
-					เลือกความสำคัญ
-				</SelectTrigger>
+				<SelectTrigger id="priority">เลือกความสำคัญ</SelectTrigger>
 				<SelectContent>
 					<SelectItem value="high">สูง</SelectItem>
 					<SelectItem value="medium">ปานกลาง</SelectItem>

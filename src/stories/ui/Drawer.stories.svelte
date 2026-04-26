@@ -31,9 +31,7 @@
 		<DrawerContent>
 			<DrawerHeader>
 				<DrawerTitle>ตั้งค่า</DrawerTitle>
-				<DrawerDescription>
-					ปรับแต่งการตั้งค่าของคุณ
-				</DrawerDescription>
+				<DrawerDescription>ปรับแต่งการตั้งค่าของคุณ</DrawerDescription>
 			</DrawerHeader>
 			<div class="p-4">
 				<p>เนื้อหาของ Drawer</p>
@@ -55,11 +53,9 @@
 		<DrawerContent>
 			<DrawerHeader>
 				<DrawerTitle>เมนู</DrawerTitle>
-				<DrawerDescription>
-					เลือกเมนูที่ต้องการ
-				</DrawerDescription>
+				<DrawerDescription>เลือกเมนูที่ต้องการ</DrawerDescription>
 			</DrawerHeader>
-			<div class="p-4 space-y-2">
+			<div class="space-y-2 p-4">
 				<Button variant="ghost" class="w-full justify-start">โปรไฟล์</Button>
 				<Button variant="ghost" class="w-full justify-start">ตั้งค่า</Button>
 				<Button variant="ghost" class="w-full justify-start">ออกจากระบบ</Button>

@@ -26,7 +26,8 @@
 
 <Story name="Today" args={{ isToday: true }} />
 
-<Story name="WithTransactions"
+<Story
+	name="WithTransactions"
 	args={{
 		dayData: {
 			date: '2026-01-15',
@@ -50,7 +51,8 @@
 	}}
 />
 
-<Story name="NegativeBalance"
+<Story
+	name="NegativeBalance"
 	args={{
 		dayData: {
 			date: '2026-01-15',
