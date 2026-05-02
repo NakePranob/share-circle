@@ -24,7 +24,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		error(401, 'Invalid LINE access token');
 	}
 
-	const { userId: lineUid, displayName, pictureUrl }: LineProfile = await lineRes.json();
+	const lineProfile: LineProfile = await lineRes.json();
+	console.log('[LINE callback] profile:', lineProfile);
+	const { userId: lineUid, displayName, pictureUrl } = lineProfile;
 
 	const syntheticEmail = `line_${lineUid}@line.sharecircle.local`;
 
@@ -68,7 +70,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 	// Upsert line_profiles using userId from session (no extra lookup needed)
 	const userId = sessionData.session.user.id;
-	await adminSupabase.from('line_profiles').upsert(
+	const { error: upsertError } = await adminSupabase.from('line_profiles').upsert(
 		{
 			user_id: userId,
 			line_uid: lineUid,
@@ -78,6 +80,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		},
 		{ onConflict: 'line_uid' }
 	);
+	if (upsertError) {
+		console.error('[LINE callback] upsert line_profiles failed:', upsertError);
+	}
 
 	return json({
 		access_token: sessionData.session.access_token,
