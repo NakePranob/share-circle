@@ -56,12 +56,6 @@
 	);
 	const allDone = $derived(hasAnyRounds && !hasUnpaid && !hasUnreceived);
 
-	$inspect('cell.date', cell.date);
-	$inspect('hasAnyRounds', hasAnyRounds);
-	$inspect('!hasUnpaid', !hasUnpaid);
-	$inspect('!hasUnreceived', !hasUnreceived);
-	$inspect('__________________');
-
 	const isPastOrToday = $derived(new Date(cell.date) >= startOfDay(new Date()));
 </script>
 
