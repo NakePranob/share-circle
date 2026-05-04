@@ -12,10 +12,14 @@ import {
 import type { Wallet, TransactionType } from '$features/wallet/types';
 import { toast } from 'svelte-sonner';
 
+const TRANSACTION_PAGE_SIZE = 50;
+
 // Module-level singleton state (mirrors useAuth pattern)
 let wallet = $state<Wallet>({ initialBalance: 0, transactions: [] });
 let loading = $state(false);
 let isLoaded = $state(false);
+let hasMoreTransactions = $state(true);
+let transactionOffset = $state(0);
 
 export function useWalletStore() {
 	const auth = useAuth();
@@ -30,15 +34,47 @@ export function useWalletStore() {
 		get isLoaded() {
 			return isLoaded;
 		},
+		get hasMoreTransactions() {
+			return hasMoreTransactions;
+		},
 
 		async loadWallet() {
 			if (!auth.userId) return;
 			loading = true;
+			transactionOffset = 0;
 			try {
-				wallet = await fetchWallet(auth.userId);
+				const { wallet: w, page } = await fetchWallet(auth.userId, {
+					limit: TRANSACTION_PAGE_SIZE,
+					offset: 0
+				});
+				wallet = w;
+				hasMoreTransactions = page?.hasMore ?? false;
 				isLoaded = true;
 			} catch (error) {
 				toast.error('Failed to load wallet');
+				console.error(error);
+			} finally {
+				loading = false;
+			}
+		},
+
+		async loadMoreTransactions() {
+			if (!auth.userId || loading || !hasMoreTransactions) return;
+			loading = true;
+			try {
+				const nextOffset = transactionOffset + TRANSACTION_PAGE_SIZE;
+				const { wallet: w, page } = await fetchWallet(auth.userId, {
+					limit: TRANSACTION_PAGE_SIZE,
+					offset: nextOffset
+				});
+				wallet = {
+					...wallet,
+					transactions: [...wallet.transactions, ...w.transactions]
+				};
+				transactionOffset = nextOffset;
+				hasMoreTransactions = page?.hasMore ?? false;
+			} catch (error) {
+				toast.error('Failed to load more transactions');
 				console.error(error);
 			} finally {
 				loading = false;
@@ -142,6 +178,8 @@ export function useWalletStore() {
 		clearAll(): void {
 			wallet = { initialBalance: 0, transactions: [] };
 			isLoaded = false;
+			hasMoreTransactions = true;
+			transactionOffset = 0;
 		},
 
 		async deleteAll(): Promise<void> {

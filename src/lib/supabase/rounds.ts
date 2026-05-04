@@ -19,21 +19,10 @@ export async function getRounds(groupId: string) {
 }
 
 export async function getRoundsByUserId(userId: string) {
-	// Get all group IDs for the user
-	const { data: groups, error: groupsError } = await supabase
-		.from('groups')
-		.select('id')
-		.eq('user_id', userId);
-
-	if (groupsError) throw groupsError;
-	if (!groups || groups.length === 0) return [];
-
-	// Get all rounds for those groups in a single query
-	const groupIds = groups.map((g) => g.id);
 	const { data, error } = await supabase
 		.from('rounds')
-		.select('*')
-		.in('group_id', groupIds)
+		.select('*, groups!inner(user_id)')
+		.eq('groups.user_id', userId)
 		.order('group_id', { ascending: true })
 		.order('round_number', { ascending: true });
 

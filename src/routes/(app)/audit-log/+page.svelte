@@ -1,13 +1,22 @@
 <script lang="ts">
 	import { useAuditLog } from '$features/audit/composables';
+	import { useWalletStore } from '$features/wallet/stores/wallet.svelte';
 	import TransactionTable from '$features/audit/components/TransactionTable.svelte';
+	import { Button } from '$lib/components/ui/button';
 	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
-	import { History, Wallet, Users } from '@lucide/svelte';
+	import { History, Wallet, Users, Loader2 } from '@lucide/svelte';
 
 	const auditLog = useAuditLog();
+	const walletStore = useWalletStore();
 	const manualTransactions = $derived(auditLog.manualTransactions);
 	const groupTransactions = $derived(auditLog.groupTransactions);
 	const allTransactions = $derived(auditLog.allTransactions);
+	const hasMore = $derived(walletStore.hasMoreTransactions);
+	const loading = $derived(walletStore.loading);
+
+	function loadMore() {
+		walletStore.loadMoreTransactions();
+	}
 </script>
 
 <div class="p-4">
@@ -43,6 +52,16 @@
 					</div>
 				{:else}
 					<TransactionTable transactions={allTransactions} />
+					{#if hasMore}
+						<div class="mt-4 flex justify-center">
+							<Button variant="outline" onclick={loadMore} disabled={loading}>
+								{#if loading}
+									<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+								{/if}
+								โหลดเพิ่ม
+							</Button>
+						</div>
+					{/if}
 				{/if}
 			</TabsContent>
 
@@ -54,6 +73,16 @@
 					</div>
 				{:else}
 					<TransactionTable transactions={manualTransactions} />
+					{#if hasMore}
+						<div class="mt-4 flex justify-center">
+							<Button variant="outline" onclick={loadMore} disabled={loading}>
+								{#if loading}
+									<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+								{/if}
+								โหลดเพิ่ม
+							</Button>
+						</div>
+					{/if}
 				{/if}
 			</TabsContent>
 
@@ -65,6 +94,16 @@
 					</div>
 				{:else}
 					<TransactionTable transactions={groupTransactions} />
+					{#if hasMore}
+						<div class="mt-4 flex justify-center">
+							<Button variant="outline" onclick={loadMore} disabled={loading}>
+								{#if loading}
+									<Loader2 class="mr-2 h-4 w-4 animate-spin" />
+								{/if}
+								โหลดเพิ่ม
+							</Button>
+						</div>
+					{/if}
 				{/if}
 			</TabsContent>
 		</Tabs>

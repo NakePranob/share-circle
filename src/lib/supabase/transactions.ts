@@ -7,11 +7,11 @@ export type TransactionUpdate = Database['public']['Tables']['transactions']['Up
 
 export async function getTransactions(
 	userId: string,
-	options?: { groupId?: string; limit?: number }
+	options?: { groupId?: string; limit?: number; offset?: number }
 ) {
 	let query = supabase
 		.from('transactions')
-		.select('*')
+		.select('*', { count: 'exact' })
 		.eq('user_id', userId)
 		.order('date', { ascending: false });
 
@@ -19,13 +19,16 @@ export async function getTransactions(
 		query = query.eq('group_id', options.groupId);
 	}
 	if (options?.limit) {
-		query = query.limit(options.limit);
+		query = query.range(
+			options.offset ?? 0,
+			(options.offset ?? 0) + options.limit - 1
+		);
 	}
 
-	const { data, error } = await query;
+	const { data, error, count } = await query;
 
 	if (error) throw error;
-	return data;
+	return { data: data ?? [], total: count ?? 0 };
 }
 
 export async function getTransactionById(id: string) {

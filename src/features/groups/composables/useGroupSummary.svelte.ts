@@ -4,21 +4,33 @@ import { nextRoundOwe, totalIReceive, totalIOwe } from '$features/groups/utils/c
 /**
  * @param getGroup - Must be a reactive getter, not a plain value.
  * Usage: useGroupSummary(() => group) where `group` is $derived.
- * Callback pattern avoids Svelte 5 "state_referenced_locally" warning.
+ * Returns getters to maintain reactivity in Svelte 5.
  */
 export function useGroupSummary(getGroup: () => Group | undefined) {
-	const group = $derived(getGroup());
-	const owe = $derived(group ? nextRoundOwe(group) : 0);
-	const sumReceive = $derived(group ? totalIReceive(group) : 0);
-	const sumOwe = $derived(group ? totalIOwe(group) : 0);
-	const profit = $derived(sumReceive - sumOwe);
-	const isProfitable = $derived(profit >= 0);
-
 	return {
-		owe,
-		sumReceive,
-		sumOwe,
-		profit,
-		isProfitable
+		get owe() {
+			const group = getGroup();
+			return group ? nextRoundOwe(group) : 0;
+		},
+		get sumReceive() {
+			const group = getGroup();
+			return group ? totalIReceive(group) : 0;
+		},
+		get sumOwe() {
+			const group = getGroup();
+			return group ? totalIOwe(group) : 0;
+		},
+		get profit() {
+			const group = getGroup();
+			const receive = group ? totalIReceive(group) : 0;
+			const owe = group ? totalIOwe(group) : 0;
+			return receive - owe;
+		},
+		get isProfitable() {
+			const group = getGroup();
+			const receive = group ? totalIReceive(group) : 0;
+			const owe = group ? totalIOwe(group) : 0;
+			return receive - owe >= 0;
+		}
 	};
 }

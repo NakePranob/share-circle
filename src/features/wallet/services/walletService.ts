@@ -9,7 +9,7 @@ import {
 import type { Wallet, Transaction, TransactionType } from '$features/wallet/types';
 import { toISODate } from '$features/shared/utils/dateHelpers';
 
-type SupabaseTransactionRow = Awaited<ReturnType<typeof getTransactions>>[number];
+type SupabaseTransactionRow = Awaited<ReturnType<typeof getTransactions>>['data'][number];
 
 export function mapTransactionRow(t: SupabaseTransactionRow): Transaction {
 	return {
@@ -25,16 +25,36 @@ export function mapTransactionRow(t: SupabaseTransactionRow): Transaction {
 	};
 }
 
-export async function fetchWallet(userId: string): Promise<Wallet> {
-	const [data, transactions] = await Promise.all([
+export interface TransactionPage {
+	transactions: Transaction[];
+	total: number;
+	hasMore: boolean;
+}
+
+export async function fetchWallet(
+	userId: string,
+	options?: { limit?: number; offset?: number }
+): Promise<{ wallet: Wallet; page?: TransactionPage }> {
+	const limit = options?.limit ?? 50;
+	const offset = options?.offset ?? 0;
+
+	const [data, txResult] = await Promise.all([
 		getOrCreateWallet(userId),
-		getTransactions(userId)
+		getTransactions(userId, { limit, offset })
 	]);
 
-	return {
+	const wallet: Wallet = {
 		initialBalance: data?.initial_balance ?? 0,
-		transactions: transactions.map(mapTransactionRow)
+		transactions: txResult.data.map(mapTransactionRow)
 	};
+
+	const page: TransactionPage = {
+		transactions: wallet.transactions,
+		total: txResult.total,
+		hasMore: offset + limit < txResult.total
+	};
+
+	return { wallet, page };
 }
 
 export async function updateInitialBalance(userId: string, amount: number): Promise<void> {
